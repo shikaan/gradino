@@ -1,0 +1,6 @@
+**/*.o
+**/*.dSYM
+*.plist
+
+examples/*
+!examples/*.c
