@@ -49,6 +49,7 @@ SHA := dev
 ###############################################################################
 
 examples/backprop: gradino.o
+examples/perceptron: gradino.o
 
 .PHONY: clean
 clean:
