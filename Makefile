@@ -50,6 +50,14 @@ SHA := dev
 
 examples/backprop: gradino.o
 examples/perceptron: gradino.o
+examples/layer: gradino.o
+
+.PHONY: examples
+examples: examples/backprop examples/perceptron examples/layer
+	./examples/backprop
+	./examples/perceptron
+	./examples/layer
+
 
 .PHONY: clean
 clean:

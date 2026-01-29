@@ -1,5 +1,4 @@
 #include "gradino.h"
-#include <iso646.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,29 +32,29 @@ static value_t vrand(void) {
   return (double)((double)arc4random() / RAND_MAX) * 2.0 - 1.0;
 }
 
-static inline vptr_t tpushval(tape_t *self, value_t val) {
+static inline idx_t tpushval(tape_t *self, value_t val) {
   panicif(self->len >= self->cap, "buffer full (cap=%lu)", self->cap);
-  vptr_t idx = self->len;
+  idx_t idx = self->len;
   self->values[idx] = val;
   self->len++;
   return idx;
 }
 
-static value_t tvalat(tape_t *self, vptr_t idx) {
+static value_t tvalat(tape_t *self, idx_t idx) {
   panicif(idx < 0 || idx >= self->len,
           "index %lu out of bounds (len=%lu, cap=%lu)", idx, self->len,
           self->cap);
   return self->values[idx];
 }
 
-static op_t *topat(tape_t *self, vptr_t idx) {
+static op_t *topat(tape_t *self, idx_t idx) {
   panicif(idx < 0 || idx >= self->len,
           "index %lu out of bounds (len=%lu, cap=%lu)", idx, self->len,
           self->cap);
   return &self->ops[idx];
 }
 
-void tinit(tape_t *self, vptr_t len, value_t *data, value_t *grads, op_t *ops) {
+void tinit(tape_t *self, idx_t len, value_t *data, value_t *grads, op_t *ops) {
   self->values = data;
   self->grads = grads;
   self->ops = ops;
@@ -66,8 +65,8 @@ void tinit(tape_t *self, vptr_t len, value_t *data, value_t *grads, op_t *ops) {
   sranddev();
 }
 
-vptr_t vinit(tape_t *self, value_t value) {
-  vptr_t pushed = tpushval(self, value);
+idx_t vinit(tape_t *self, value_t value) {
+  idx_t pushed = tpushval(self, value);
   self->ops[pushed].type = OP_INIT;
   self->ops[pushed].input[0] = pushed;
   self->ops[pushed].output = pushed;
@@ -75,8 +74,8 @@ vptr_t vinit(tape_t *self, value_t value) {
   return pushed;
 }
 
-vptr_t vadd(tape_t *self, vptr_t a, vptr_t b) {
-  vptr_t pushed = tpushval(self, tvalat(self, a) + tvalat(self, b));
+idx_t vadd(tape_t *self, idx_t a, idx_t b) {
+  idx_t pushed = tpushval(self, tvalat(self, a) + tvalat(self, b));
   self->ops[pushed].type = OP_ADD;
   self->ops[pushed].input[0] = a;
   self->ops[pushed].input[1] = b;
@@ -85,8 +84,8 @@ vptr_t vadd(tape_t *self, vptr_t a, vptr_t b) {
   return pushed;
 }
 
-vptr_t vmul(tape_t *self, vptr_t a, vptr_t b) {
-  vptr_t pushed = tpushval(self, tvalat(self, a) * tvalat(self, b));
+idx_t vmul(tape_t *self, idx_t a, idx_t b) {
+  idx_t pushed = tpushval(self, tvalat(self, a) * tvalat(self, b));
   self->ops[pushed].type = OP_MUL;
   self->ops[pushed].input[0] = a;
   self->ops[pushed].input[1] = b;
@@ -95,9 +94,9 @@ vptr_t vmul(tape_t *self, vptr_t a, vptr_t b) {
   return pushed;
 }
 
-vptr_t vReLU(tape_t *self, vptr_t a) {
+idx_t vReLU(tape_t *self, idx_t a) {
   value_t val = tvalat(self, a);
-  vptr_t pushed = tpushval(self, val > 0 ? val : 0);
+  idx_t pushed = tpushval(self, val > 0 ? val : 0);
   self->ops[pushed].type = OP_RELU;
   self->ops[pushed].input[0] = a;
   self->ops[pushed].output = pushed;
@@ -105,13 +104,13 @@ vptr_t vReLU(tape_t *self, vptr_t a) {
   return pushed;
 }
 
-void vbackward(tape_t *self, vptr_t start) {
+void vbackward(tape_t *self, idx_t start) {
   self->grads[start] = 1.0;
-  for (vptr_t i = start + 1; i-- > 0;) {
+  for (idx_t i = start + 1; i-- > 0;) {
     op_t *op = topat(self, i);
-    vptr_t in0 = op->input[0];
-    vptr_t in1 = op->input[1];
-    vptr_t out = op->output;
+    idx_t in0 = op->input[0];
+    idx_t in1 = op->input[1];
+    idx_t out = op->output;
 
     switch (op->type) {
     case OP_INIT:
@@ -134,7 +133,7 @@ void vbackward(tape_t *self, vptr_t start) {
   }
 }
 
-void vdbg(tape_t *self, vptr_t a, const char *label) {
+void vdbg(tape_t *self, idx_t a, const char *label) {
   printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tvalat(self, a),
          self->grads[a]);
 
@@ -163,50 +162,82 @@ void vdbg(tape_t *self, vptr_t a, const char *label) {
   printf("\n");
 }
 
-void binit(buffer_t *p, vptr_t len, vptr_t *data) {
+void slinit(slice_t *p, idx_t len, idx_t *data) {
   p->data = data;
   p->len = len;
 }
 
-void pinit(tape_t *self, ptron_t *p, vptr_t len, vptr_t *data) {
-  binit(p, len, data);
-  for (vptr_t i = 0; i < len; i++) {
+void pinit(tape_t *self, ptron_t *p, idx_t len, idx_t *data) {
+  // TODO: check tape capacity
+  slinit(p, len, data);
+  for (idx_t i = 0; i < len; i++) {
     p->data[i] = vinit(self, vrand());
   }
 }
 
-vptr_t pactivate(tape_t *self, ptron_t *p, buffer_t *input) {
+idx_t pactivate(tape_t *self, ptron_t *p, slice_t *input) {
   panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
           p->len = 1, input->len);
 
   // dot product
-  vptr_t sum = vinit(self, 0);
-  for (vptr_t i = 0; i < input->len; i++) {
-    vptr_t w = p->data[i];
-    vptr_t x = input->data[i];
-    vptr_t prd = vmul(self, w, x);
+  idx_t sum = vinit(self, 0);
+  for (idx_t i = 0; i < input->len; i++) {
+    idx_t w = p->data[i];
+    idx_t x = input->data[i];
+    idx_t prd = vmul(self, w, x);
     sum = vadd(self, sum, prd);
   }
 
-  vptr_t bias = p->data[p->len - 1];
-  vptr_t activation = vadd(self, sum, bias);
+  idx_t bias = p->data[p->len - 1];
+  idx_t activation = vadd(self, sum, bias);
   return vReLU(self, activation);
 }
 
 void pdbg(tape_t *self, ptron_t *p, const char *label) {
-  printf("%s\n", label);
-  for (vptr_t i = 0; i < p->len - 1; i++) {
-    char buf[8];
-    snprintf(buf, sizeof(buf), "w[%lu]", i);
+  printf("  %s\n", label);
+  char buf[16];
+  for (idx_t i = 0; i < p->len - 1; i++) {
+    snprintf(buf, sizeof(buf), "    w[%lu]", i);
     vdbg(self, p->data[i], buf);
   }
-  vdbg(self, p->data[p->len - 1], "b");
+  vdbg(self, p->data[p->len - 1], "    b");
 }
 
-void bdbg(tape_t *self, buffer_t *p, const char *label) {
-  for (vptr_t i = 0; i < p->len; i++) {
+void sldbg(tape_t *self, slice_t *p, const char *label) {
+  printf("%s\n", label);
+  for (idx_t i = 0; i < p->len; i++) {
     char buf[16];
-    snprintf(buf, sizeof(buf), "%s[%lu]", label, i);
+    snprintf(buf, sizeof(buf), "  %s[%lu]", label, i);
     vdbg(self, p->data[i], buf);
+  }
+}
+
+void linit(tape_t *self, layer_t *l, idx_t nptrons, ptron_t *ptrons,
+           idx_t nvalues, idx_t *values) {
+  l->len = nptrons;
+  l->ptrons = ptrons;
+
+  for (idx_t i = 0; i < nptrons; i++) {
+    idx_t *pvalues = values + nvalues * i;
+    pinit(self, &ptrons[i], nvalues, pvalues);
+  }
+}
+
+void lactivate(tape_t *self, layer_t *layer, slice_t *input, slice_t *result) {
+  panicif(result->len != layer->ptrons[0].len,
+          "unexpected result len: expected %lu, got %lu", layer->ptrons[0].len,
+          result->len);
+  for (idx_t i = 0; i < layer->len; i++) {
+    result->data[i] = pactivate(self, &layer->ptrons[i], input);
+  }
+}
+
+void ldbg(tape_t *self, layer_t *l, const char *label) {
+  printf("%s\n", label);
+
+  char buf[16];
+  for (idx_t i = 0; i < l->len; i++) {
+    snprintf(buf, sizeof(buf), "ptron[%lu]", i);
+    pdbg(self, &l->ptrons[i], buf);
   }
 }

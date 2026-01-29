@@ -19,15 +19,15 @@ int main(void) {
   op_t ops[SIZE];
   tinit(&tape, SIZE, values, grads, ops);
 
-  vptr_t a = vinit(&tape, 2.0);
-  vptr_t b = vinit(&tape, -3.0);
-  vptr_t c = vinit(&tape, 10.0);
-  vptr_t f = vinit(&tape, -2.0);
-  vptr_t e = vmul(&tape, a, b);
-  vptr_t d = vadd(&tape, e, c);
-  vptr_t L = vmul(&tape, d, f);
+  idx_t a = vinit(&tape, 2.0);
+  idx_t b = vinit(&tape, -3.0);
+  idx_t c = vinit(&tape, 10.0);
+  idx_t f = vinit(&tape, -2.0);
+  idx_t e = vmul(&tape, a, b);
+  idx_t d = vadd(&tape, e, c);
+  idx_t L = vmul(&tape, d, f);
 
-  vback(&tape, L);
+  vbackward(&tape, L);
 
   asserteqf(grads[L], 1.0);
   asserteqf(grads[d], -2.0);
