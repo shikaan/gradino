@@ -33,29 +33,29 @@ typedef struct {
   idx_t len;
 } slice_t;
 
-void tinit(tape_t *self, idx_t len, value_t *data, value_t *grads, op_t *ops);
-
-idx_t vinit(tape_t *self, value_t a);
-idx_t vadd(tape_t *self, idx_t a, idx_t b);
-idx_t vmul(tape_t *self, idx_t a, idx_t b);
-idx_t vReLU(tape_t *self, idx_t a);
-void vbackward(tape_t *self, idx_t start);
-void vdbg(tape_t *self, idx_t a, const char *label);
-
-void sldbg(tape_t *self, slice_t *b, const char *label);
-void slinit(slice_t *b, idx_t len, idx_t *data);
-
 // [ ...weights | bias ]
 typedef slice_t ptron_t;
-void pinit(tape_t *self, ptron_t *p, idx_t len, idx_t *data);
-idx_t pactivate(tape_t *self, ptron_t *perceptron, slice_t *input);
-void pdbg(tape_t *self, ptron_t *p, const char *label);
-
 typedef struct {
   ptron_t *ptrons;
   idx_t len;
 } layer_t;
-void linit(tape_t *self, layer_t *l, idx_t nptrons, ptron_t *ptrons,
-           idx_t nvalues, idx_t *values);
-void lactivate(tape_t *self, layer_t *layer, slice_t *input, slice_t *result);
-void ldbg(tape_t *self, layer_t *l, const char *label);
+
+void tinit(idx_t n, value_t *data, value_t *grads, op_t *ops);
+
+idx_t vinit(value_t a);
+idx_t vadd(idx_t a, idx_t b);
+idx_t vmul(idx_t a, idx_t b);
+idx_t vReLU(idx_t a);
+void vbackward(idx_t start);
+void vdbg(idx_t a, const char *label);
+
+void sldbg(slice_t *sl, const char *label);
+void slinit(slice_t *sl, idx_t n, idx_t *data);
+
+void pinit(ptron_t *p, idx_t len, idx_t *data);
+idx_t pactivate(ptron_t *p, slice_t *input);
+void pdbg(ptron_t *p, const char *label);
+
+void linit(layer_t *l, idx_t ninput, idx_t n, ptron_t *ptrons, idx_t *values);
+void lactivate(layer_t *l, slice_t *input, slice_t *result);
+void ldbg(layer_t *l, const char *label);

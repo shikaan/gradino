@@ -14,20 +14,19 @@
 enum { SIZE = 8 };
 
 int main(void) {
-  tape_t tape;
   value_t values[SIZE], grads[SIZE];
   op_t ops[SIZE];
-  tinit(&tape, SIZE, values, grads, ops);
+  tinit(SIZE, values, grads, ops);
 
-  idx_t a = vinit(&tape, 2.0);
-  idx_t b = vinit(&tape, -3.0);
-  idx_t c = vinit(&tape, 10.0);
-  idx_t f = vinit(&tape, -2.0);
-  idx_t e = vmul(&tape, a, b);
-  idx_t d = vadd(&tape, e, c);
-  idx_t L = vmul(&tape, d, f);
+  idx_t a = vinit(2.0);
+  idx_t b = vinit(-3.0);
+  idx_t c = vinit(10.0);
+  idx_t f = vinit(-2.0);
+  idx_t e = vmul(a, b);
+  idx_t d = vadd(e, c);
+  idx_t L = vmul(d, f);
 
-  vbackward(&tape, L);
+  vbackward(L);
 
   asserteqf(grads[L], 1.0);
   asserteqf(grads[d], -2.0);

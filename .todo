@@ -11,4 +11,4 @@ IN PROGRESS
 
 TODO
 ---
-- [ ] nicer API with global tape and no injections
+- [ ] make dot product an operation to save on values
