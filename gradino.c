@@ -10,21 +10,27 @@
 #else
 #define panicif(Assertion, Fmt, ...)                                           \
   if (Assertion) {                                                             \
-    fprintf(stderr, "%s:%i panic: ", __FILE__, __LINE__);                      \
-    fprintf(stderr, Fmt __VA_OPT__(, ) __VA_ARGS__);                           \
-    fprintf(stderr, "\n");                                                     \
+    char buf[256];                                                             \
+    snprintf(buf, sizeof(buf), "%s:%i panic: ", __FILE__, __LINE__);           \
+    fputs(buf, stderr);                                                        \
+    snprintf(buf, sizeof(buf), Fmt __VA_OPT__(, ) __VA_ARGS__);                \
+    fputs(buf, stderr);                                                        \
+    fputs("\n", stderr);                                                       \
     exit(1);                                                                   \
   }
 #endif
 
 #define unreacheable()                                                         \
   {                                                                            \
-    fprintf(stderr, "%s:%i reached unreacheable point", __FILE__, __LINE__);   \
+    char buf[256];                                                             \
+    snprintf(buf, sizeof(buf), "%s:%i reached unreacheable point", __FILE__,   \
+             __LINE__);                                                        \
+    fputs(buf, stderr);                                                        \
     exit(1);                                                                   \
   }
 
 static value_t vrand(void) {
-  return (double)((double)rand() / RAND_MAX) * 2.0 - 1.0;
+  return (double)((double)arc4random() / RAND_MAX) * 2.0 - 1.0;
 }
 
 static inline vptr_t tpushval(tape_t *self, value_t val) {
