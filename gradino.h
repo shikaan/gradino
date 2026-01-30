@@ -67,7 +67,7 @@ void sldbg(slice_t *sl, const char *label);
 void pinit(ptron_t *p, len_t n, idx_t *data);
 // Activate the perceptron (with ReLU) against `input`
 // `input->len` must be `p->len - 1`
-idx_t pactivate(ptron_t *p, slice_t *input);
+idx_t pactivate(const ptron_t *p, const slice_t *input);
 // Prints the perceptron on stdout
 void pdbg(ptron_t *p, const char *label);
 
@@ -76,12 +76,13 @@ void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *values);
 // Activate the perceptrons in the layer against `input`
 // `input->len` must be `nin - 1` (see `linit`)
 // `result->len` must be `nout`
-void lactivate(layer_t *l, slice_t *input, slice_t *result);
+void lactivate(const layer_t *l, const slice_t *input, slice_t *result);
 // Prints the layer on stdout
 void ldbg(layer_t *l, const char *label);
 
 void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *values);
 
-void nactivate(net_t *n, slice_t *input, slice_t *scratch, slice_t *result);
-void ndbg(net_t *n, const char *label);
+void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
+               slice_t *result);
+void ndbg(const net_t *n, const char *label);

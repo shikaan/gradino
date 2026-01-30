@@ -192,7 +192,7 @@ void pinit(ptron_t *p, idx_t n, idx_t *data) {
   }
 }
 
-idx_t pactivate(ptron_t *p, slice_t *input) {
+idx_t pactivate(const ptron_t *p, const slice_t *input) {
   panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
           p->len - 1, input->len);
 
@@ -240,7 +240,7 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values) {
   }
 }
 
-void lactivate(layer_t *l, slice_t *input, slice_t *result) {
+void lactivate(const layer_t *l, const slice_t *input, slice_t *result) {
   panicif(l->len == 0, "layer is empty", NULL);
   panicif(result->len != l->len, "unexpected result len: expected %lu, got %lu",
           l->len, result->len);
@@ -280,7 +280,7 @@ void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
   }
 }
 
-void nactivate(net_t *n, slice_t *input, slice_t *scratch, slice_t *result) {
+void nactivate(const net_t *n, const slice_t *input, slice_t *scratch, slice_t *result) {
   // TODO: preconditions
   len_t max = n->llens[0];
   for (len_t i = 1; i < n->len + 1; i++) {
@@ -292,17 +292,18 @@ void nactivate(net_t *n, slice_t *input, slice_t *scratch, slice_t *result) {
           scratch->len);
 
   len_t initlen = scratch->len;
+  slice_t linput = *input;
   for (idx_t i = 0; i < n->len - 1; i++) {
     scratch->len = n->llens[i + 1];
-    lactivate(&n->layers[i], input, scratch);
-    input->data = scratch->data;
-    input->len = scratch->len;
+    lactivate(&n->layers[i], &linput, scratch);
+    linput.data = scratch->data;
+    linput.len = scratch->len;
   }
-  lactivate(&n->layers[n->len - 1], input, result);
+  lactivate(&n->layers[n->len - 1], &linput, result);
   scratch->len = initlen;
 }
 
-void ndbg(net_t* n, const char* label) {
+void ndbg(const net_t *n, const char *label) {
   printf("%s\n", label);
 
   char buf[16];

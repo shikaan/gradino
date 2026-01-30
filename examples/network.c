@@ -35,6 +35,9 @@ int main(void) {
   slinit(&scratch, len(sdata), sdata);
 
   nactivate(&net, &input, &scratch, &result);
+  nactivate(&net, &input, &scratch, &result);
+  nactivate(&net, &input, &scratch, &result);
+  nactivate(&net, &input, &scratch, &result);
   ndbg(&net, "net");
 
   sldbg(&result, "result");
