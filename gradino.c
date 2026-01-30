@@ -9,6 +9,23 @@ static tape_t TAPE;
 #ifdef NDEBUG
 #define panicif(Assertion, Fmt, ...) ((void)0)
 #else
+#include <execinfo.h>
+
+static void stacktrace(FILE *out) {
+  void *addrs[128];
+  int n = backtrace(addrs, 128);
+  if (n <= 0)
+    return;
+
+  char **syms = backtrace_symbols(addrs, n);
+  if (syms) {
+    for (int i = 1; i < n; ++i) {
+      fprintf(out, "  %s\n", syms[i]);
+    }
+    free(syms);
+  }
+}
+
 #define panicif(Assertion, Fmt, ...)                                           \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
@@ -17,6 +34,7 @@ static tape_t TAPE;
     snprintf(buf, sizeof(buf), Fmt __VA_OPT__(, ) __VA_ARGS__);                \
     fputs(buf, stderr);                                                        \
     fputs("\n", stderr);                                                       \
+    stacktrace(stderr);                                                        \
     exit(1);                                                                   \
   }
 #endif
@@ -167,16 +185,16 @@ void slinit(slice_t *sl, idx_t n, idx_t *data) {
   sl->len = n;
 }
 
-void pinit(ptron_t *sl, idx_t n, idx_t *data) {
-  slinit(sl, n, data);
+void pinit(ptron_t *p, idx_t n, idx_t *data) {
+  slinit(p, n, data);
   for (idx_t i = 0; i < n; i++) {
-    sl->data[i] = vinit(vrand());
+    p->data[i] = vinit(vrand());
   }
 }
 
 idx_t pactivate(ptron_t *p, slice_t *input) {
   panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
-          p->len = 1, input->len);
+          p->len - 1, input->len);
 
   // dot product
   idx_t sum = vinit(0);
@@ -211,21 +229,21 @@ void sldbg(slice_t *sl, const char *label) {
   }
 }
 
-void linit(layer_t *l, idx_t ninput, idx_t n, ptron_t *ptrons, idx_t *values) {
+void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values) {
   // TODO: check tape capacity
-  l->len = n;
+  l->len = nout;
   l->ptrons = ptrons;
 
-  for (idx_t i = 0; i < n; i++) {
-    idx_t *pvalues = values + ninput * i;
-    pinit(&ptrons[i], ninput, pvalues);
+  for (idx_t i = 0; i < nout; i++) {
+    idx_t *pvalues = values + nin * i;
+    pinit(&ptrons[i], nin, pvalues);
   }
 }
 
 void lactivate(layer_t *l, slice_t *input, slice_t *result) {
-  panicif(result->len != l->ptrons[0].len,
-          "unexpected result len: expected %lu, got %lu", l->ptrons[0].len,
-          result->len);
+  panicif(l->len == 0, "layer is empty", NULL);
+  panicif(result->len != l->len, "unexpected result len: expected %lu, got %lu",
+          l->len, result->len);
   for (idx_t i = 0; i < l->len; i++) {
     result->data[i] = pactivate(&l->ptrons[i], input);
   }

@@ -47,15 +47,28 @@ idx_t vadd(idx_t a, idx_t b);
 idx_t vmul(idx_t a, idx_t b);
 idx_t vReLU(idx_t a);
 void vbackward(idx_t start);
+// Prints the value on stdout
 void vdbg(idx_t a, const char *label);
 
-void sldbg(slice_t *sl, const char *label);
+// Initialize a slice with memory for data
+// `data` must be an array of at least length `n`
 void slinit(slice_t *sl, idx_t n, idx_t *data);
+// Prints the slice on stdout
+void sldbg(slice_t *sl, const char *label);
 
-void pinit(ptron_t *p, idx_t len, idx_t *data);
+// Intialize a perceptron of size `n` (n-1 wieghts, 1 bias)
+void pinit(ptron_t *p, idx_t n, idx_t *data);
+// Activate the perceptron (with ReLU) against `input`
+// `input->len` must be `p->len - 1`
 idx_t pactivate(ptron_t *p, slice_t *input);
+// Prints the perceptron on stdout
 void pdbg(ptron_t *p, const char *label);
 
-void linit(layer_t *l, idx_t ninput, idx_t n, ptron_t *ptrons, idx_t *values);
+// Initialize a layer of `nout` perceptrons of size `nin`
+void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values);
+// Activate the perceptrons in the layer against `input`
+// `input->len` must be `nin - 1` (see `linit`)
+// `result->len` must be `nout`
 void lactivate(layer_t *l, slice_t *input, slice_t *result);
+// Prints the layer on stdout
 void ldbg(layer_t *l, const char *label);
