@@ -211,13 +211,13 @@ idx_t pactivate(ptron_t *p, slice_t *input) {
 }
 
 void pdbg(ptron_t *p, const char *label) {
-  printf("  %s\n", label);
+  printf("    %s\n", label);
   char buf[16];
   for (idx_t i = 0; i < p->len - 1; i++) {
-    snprintf(buf, sizeof(buf), "    w[%lu]", i);
+    snprintf(buf, sizeof(buf), "      w[%lu]", i);
     vdbg(p->data[i], buf);
   }
-  vdbg(p->data[p->len - 1], "    b");
+  vdbg(p->data[p->len - 1], "      b");
 }
 
 void sldbg(slice_t *sl, const char *label) {
@@ -250,11 +250,64 @@ void lactivate(layer_t *l, slice_t *input, slice_t *result) {
 }
 
 void ldbg(layer_t *l, const char *label) {
-  printf("%s\n", label);
+  printf("  %s\n", label);
 
   char buf[16];
   for (idx_t i = 0; i < l->len; i++) {
     snprintf(buf, sizeof(buf), "ptron[%lu]", i);
     pdbg(&l->ptrons[i], buf);
+  }
+}
+
+void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
+           ptron_t *ptrons, idx_t *params) {
+  // TODO: preconditions
+  n->len = nlayers - 1;
+  n->layers = layers;
+  n->llens = llens;
+
+  linit(&layers[0], llens[0], llens[1], ptrons, params);
+
+  ptron_t *lptrons = ptrons;
+  idx_t *lparams = params;
+  for (len_t i = 1; i < nlayers - 1; i++) {
+    len_t lin = llens[i] + 1; // number of weights plus the bias
+    len_t lout = llens[i + 1];
+    lptrons += llens[i];
+    lparams += llens[i - 1] * llens[i];
+
+    linit(&layers[i], lin, lout, lptrons, lparams);
+  }
+}
+
+void nactivate(net_t *n, slice_t *input, slice_t *scratch, slice_t *result) {
+  // TODO: preconditions
+  len_t max = n->llens[0];
+  for (len_t i = 1; i < n->len + 1; i++) {
+    if (n->llens[i] > max)
+      max = n->llens[i];
+  }
+
+  panicif(scratch->len < max, "invalid input len: expected %lu, got %lu", max,
+          scratch->len);
+
+  len_t initlen = scratch->len;
+  for (idx_t i = 0; i < n->len - 1; i++) {
+    scratch->len = n->llens[i + 1];
+    lactivate(&n->layers[i], input, scratch);
+    input->data = scratch->data;
+    input->len = scratch->len;
+  }
+  lactivate(&n->layers[n->len - 1], input, result);
+  scratch->len = initlen;
+}
+
+void ndbg(net_t* n, const char* label) {
+  printf("%s\n", label);
+
+  char buf[16];
+  for (idx_t i = 0; i < n->len; i++) {
+    snprintf(buf, sizeof(buf), "layer[%lu]", i);
+    ldbg(&n->layers[i], buf);
   }
 }
