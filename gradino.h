@@ -29,7 +29,7 @@ typedef struct {
 } tape_t;
 
 typedef struct {
-  idx_t *data;
+  idx_t *values;
   len_t len;
 } slice_t;
 

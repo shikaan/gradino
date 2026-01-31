@@ -40,7 +40,7 @@ int main(void) {
   for (int i = 0; i < 20; i++) {
     nactivate(&net, &input, &scratch, &result);
 
-    idx_t diff = vadd(target, vmul(result.data[0], mone));
+    idx_t diff = vadd(target, vmul(result.values[0], mone));
     idx_t loss = vmul(diff, diff);
 
     for (len_t j = 0; j < SIZE; j++)
