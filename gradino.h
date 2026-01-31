@@ -74,8 +74,6 @@ idx_t pactivate(const ptron_t *p, const slice_t *input);
 // Prints the perceptron on stdout
 void pdbg(ptron_t *p, const char *label);
 
-void pparams(const ptron_t *l, slice_t *params);
-
 // Initialize a layer of `nout` perceptrons of size `nin`
 void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *values);
 // Activate the perceptrons in the layer against `input`
@@ -85,13 +83,10 @@ void lactivate(const layer_t *l, const slice_t *input, slice_t *result);
 // Prints the layer on stdout
 void ldbg(layer_t *l, const char *label);
 
-void lparams(const layer_t *l, slice_t *params);
-
 void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *values);
 
 void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
                slice_t *result);
-void ndbg(const net_t *n, const char *label);
 
-void nparams(const net_t *n, slice_t *params);
+void ndbg(const net_t *n, const char *label);
