@@ -12,5 +12,4 @@ IN PROGRESS
 TODO
 ---
 - [ ] make dot product an operation to save on values
-- [ ] use # of weights for layer length, instead of +1 everywhere
-- [ ] should we have everything in a metrix?
+- [ ] should we have everything in a matrix?
