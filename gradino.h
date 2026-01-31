@@ -49,6 +49,8 @@ typedef struct {
 
 void tinit(idx_t n, value_t *data, value_t *grads, op_t *ops);
 value_t tvalat(idx_t idx);
+idx_t tmark(void);
+void treset(idx_t mark);
 
 idx_t vinit(value_t a);
 idx_t vadd(idx_t a, idx_t b);

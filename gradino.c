@@ -86,6 +86,14 @@ void tinit(idx_t len, value_t *data, value_t *grads, op_t *ops) {
   sranddev();
 }
 
+idx_t tmark(void) { return TAPE.len; }
+
+void treset(idx_t mark) {
+  panicif(mark >= TAPE.cap, "invalid mark: expect less than %lu, got %lu",
+          TAPE.cap, mark);
+  TAPE.len = mark;
+}
+
 idx_t vinit(value_t value) {
   idx_t pushed = tpushval(value);
   TAPE.ops[pushed].type = OP_INIT;

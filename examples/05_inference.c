@@ -6,7 +6,7 @@
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
-enum { SIZE = 1 << 18, EPOCHS = 45 };
+enum { SIZE = 1 << 18, EPOCHS = 1000 };
 
 typedef struct {
   slice_t input;
@@ -84,6 +84,7 @@ int main(void) {
   ptron_t ptrons[19];
   idx_t params[163];
   ninit(&net, 7, len(llens), llens, layers, ptrons, params);
+  idx_t mark = tmark();
 
   slice_t result;
   idx_t rdata[11];
@@ -98,6 +99,7 @@ int main(void) {
     value_t epoch_sum = 0.0;
 
     for (size_t i = 0; i < len(samples); i++) {
+      treset(mark);
       nactivate(&net, &samples[i].input, &scratch, &result);
 
       slice_t target = samples[i].target;
@@ -121,46 +123,51 @@ int main(void) {
         values[idx] += grads[idx] * -0.005;
       }
     }
-    printf("epoch %d avg loss: %f\n", epoch, epoch_sum / len(samples));
-  }
 
-  printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
-
-  char buf[16];
-  fgets(buf, sizeof(buf), stdin);
-
-  char raw[7];
-  size_t rlen = 0;
-  for (size_t i = 0; i < sizeof(buf) && rlen < 7; i++) {
-    if (!isspace(buf[i]))
-      raw[rlen++] = buf[i];
-  }
-
-  idx_t xvals[7];
-  for (int b = 0; b < 7; b++) {
-    value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
-    xvals[b] = vinit(xv);
-  }
-  slice_t input;
-  slinit(&input, 7, xvals);
-
-  nactivate(&net, &input, &scratch, &result);
-
-  len_t pred = 0;
-  value_t best_val = tvalat(result.values[0]);
-  for (len_t k = 1; k < 11; k++) {
-    value_t v = tvalat(result.values[k]);
-    if (v > best_val) {
-      best_val = v;
-      pred = k;
+    if (epoch % 10 == 0) {
+      printf("epoch %d avg loss: %f\n", epoch, epoch_sum / len(samples));
     }
   }
 
-  printf("Prediction: ");
-  if (pred == 10) {
-    printf("invalid (class 10)\n");
-  } else {
-    printf("%lu\n", pred);
+  while (1) {
+    treset(mark);
+    printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
+
+    char buf[16];
+    fgets(buf, sizeof(buf), stdin);
+
+    char raw[7];
+    size_t rlen = 0;
+    for (size_t i = 0; i < sizeof(buf) && rlen < 7; i++) {
+      if (!isspace(buf[i]))
+        raw[rlen++] = buf[i];
+    }
+
+    idx_t xvals[7];
+    for (int b = 0; b < 7; b++) {
+      value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
+      xvals[b] = vinit(xv);
+    }
+    slice_t input;
+    slinit(&input, 7, xvals);
+
+    nactivate(&net, &input, &scratch, &result);
+
+    len_t pred = 0;
+    value_t best_val = tvalat(result.values[0]);
+    for (len_t k = 1; k < 11; k++) {
+      value_t v = tvalat(result.values[k]);
+      if (v > best_val) {
+        best_val = v;
+        pred = k;
+      }
+    }
+
+    if (pred == 10) {
+      printf("~> invalid\n");
+    } else {
+      printf("~> %lu\n", pred);
+    }
   }
 
   return 0;
