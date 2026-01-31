@@ -187,6 +187,10 @@ void slinit(slice_t *sl, idx_t n, idx_t *data) {
 }
 
 void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
+  panicif(!p, "ptron cannot be empty", NULL);
+  panicif(nparams == 0, "must have at least one param", NULL);
+  panicif(!params, "must provide params", NULL);
+
   slinit(p, nparams, params);
   for (idx_t i = 0; i < nparams; i++) {
     p->values[i] = vinit(vrand());
@@ -194,6 +198,8 @@ void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
 }
 
 idx_t pactivate(const ptron_t *p, const slice_t *input) {
+  panicif(!p, "ptron cannot be null", NULL);
+  panicif(!input, "input cannot be null", NULL);
   panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
           p->len - 1, input->len);
 
@@ -228,7 +234,13 @@ void sldbg(slice_t *sl, const char *label) {
   }
 }
 
-void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values) {
+void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
+  panicif(!l, "layer cannot be empty", NULL);
+  panicif(nin == 0, "input size must be positive", NULL);
+  panicif(nout == 0, "output size must be positive", NULL);
+  panicif(!ptrons, "must provide ptrons", NULL);
+  panicif(!params, "must provide params", NULL);
+
   l->len = nout;
   l->ptrons = ptrons;
 
@@ -236,7 +248,7 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values) {
   // as big as the weights
   len_t pnparams = nin + 1;
   for (idx_t i = 0; i < nout; i++) {
-    idx_t *pvalues = values + pnparams * i;
+    idx_t *pvalues = params + pnparams * i;
     pinit(&ptrons[i], pnparams, pvalues);
   }
 }
@@ -261,7 +273,14 @@ void ldbg(layer_t *l, const char *label) {
 
 void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *params) {
-  // TODO: preconditions
+  panicif(!n, "net cannot be empty", NULL);
+  panicif(nin == 0, "input size must be positive", NULL);
+  panicif(nlayers == 0, "must have at least one layer", NULL);
+  panicif(!llens, "must provide layer lengths", NULL);
+  panicif(!layers, "must provide layers", NULL);
+  panicif(!ptrons, "must provide ptrons", NULL);
+  panicif(!params, "must provide params", NULL);
+
   n->len = nlayers;
   n->layers = layers;
   n->llens = llens;
