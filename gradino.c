@@ -186,36 +186,37 @@ void slinit(slice_t *sl, idx_t n, idx_t *data) {
   sl->len = n;
 }
 
-void pinit(ptron_t *p, idx_t n, idx_t *data) {
-  slinit(&p->weights, n, data);
-  for (idx_t i = 0; i < n; i++) {
-    p->weights.data[i] = vinit(vrand());
+void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
+  slinit(p, nparams, params);
+  for (idx_t i = 0; i < nparams; i++) {
+    p->data[i] = vinit(vrand());
   }
-  p->bias = vinit(vrand());
 }
 
 idx_t pactivate(const ptron_t *p, const slice_t *input) {
-  panicif(input->len != p->weights.len,
-          "invalid input len: expected %lu, got %lu", p->weights.len,
-          input->len);
+  panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
+          p->len - 1, input->len);
 
   // dot product
   idx_t sum = vinit(0);
   for (idx_t i = 0; i < input->len; i++) {
-    idx_t w = p->weights.data[i];
+    idx_t w = p->data[i];
     idx_t x = input->data[i];
     idx_t prd = vmul(w, x);
     sum = vadd(sum, prd);
   }
 
-  idx_t activation = vadd(sum, p->bias);
+  idx_t activation = vadd(sum, p->data[p->len - 1]);
   return vtanh(activation);
 }
 
 void pdbg(ptron_t *p, const char *label) {
   printf("%s\n", label);
-  sldbg(&p->weights, "w");
-  vdbg(p->bias, "b");
+  slice_t weights;
+  weights.data = p->data;
+  weights.len = p->len - 1;
+  sldbg(&weights, "w");
+  vdbg(p->data[p->len - 1], "b");
 }
 
 void sldbg(slice_t *sl, const char *label) {
@@ -228,13 +229,15 @@ void sldbg(slice_t *sl, const char *label) {
 }
 
 void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *values) {
-  // TODO: check tape capacity
   l->len = nout;
   l->ptrons = ptrons;
 
+  // nparams for a perceptron is size of input + 1, since the input needs to be
+  // as big as the weights
+  len_t pnparams = nin + 1;
   for (idx_t i = 0; i < nout; i++) {
-    idx_t *pvalues = values + nin * i;
-    pinit(&ptrons[i], nin, pvalues);
+    idx_t *pvalues = values + pnparams * i;
+    pinit(&ptrons[i], pnparams, pvalues);
   }
 }
 

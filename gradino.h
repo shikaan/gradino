@@ -33,11 +33,7 @@ typedef struct {
   len_t len;
 } slice_t;
 
-// [ ...weights | bias ]
-typedef struct {
-  slice_t weights;
-  idx_t bias;
-} ptron_t;
+typedef slice_t ptron_t;
 
 typedef struct {
   ptron_t *ptrons;
