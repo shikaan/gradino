@@ -18,18 +18,18 @@ void prepare(void) {
 #define sample(Idx, A, B, C, D, E, F, G)                                       \
   static idx_t input##Idx[7];                                                  \
   static idx_t target##Idx[11];                                                \
-  input##Idx[0] = vinit(A);                                                    \
-  input##Idx[1] = vinit(B);                                                    \
-  input##Idx[2] = vinit(C);                                                    \
-  input##Idx[3] = vinit(D);                                                    \
-  input##Idx[4] = vinit(E);                                                    \
-  input##Idx[5] = vinit(F);                                                    \
-  input##Idx[6] = vinit(G);                                                    \
+  input##Idx[0] = vfrom(A);                                                    \
+  input##Idx[1] = vfrom(B);                                                    \
+  input##Idx[2] = vfrom(C);                                                    \
+  input##Idx[3] = vfrom(D);                                                    \
+  input##Idx[4] = vfrom(E);                                                    \
+  input##Idx[5] = vfrom(F);                                                    \
+  input##Idx[6] = vfrom(G);                                                    \
   samples[Idx].input.len = 7;                                                  \
   samples[Idx].input.values = input##Idx;                                      \
   samples[Idx].target.len = 11;                                                \
   for (int i = 0; i < 11; i++) {                                               \
-    target##Idx[i] = vinit(i == Idx ? 1.0 : -1.0);                             \
+    target##Idx[i] = vfrom(i == Idx ? 1.0 : -1.0);                             \
   }                                                                            \
   samples[Idx].target.values = target##Idx;
 
@@ -47,18 +47,18 @@ void prepare(void) {
 #define invalid_sample(Idx, A, B, C, D, E, F, G)                               \
   static idx_t input##Idx[7];                                                  \
   static idx_t target##Idx[11];                                                \
-  input##Idx[0] = vinit(A);                                                    \
-  input##Idx[1] = vinit(B);                                                    \
-  input##Idx[2] = vinit(C);                                                    \
-  input##Idx[3] = vinit(D);                                                    \
-  input##Idx[4] = vinit(E);                                                    \
-  input##Idx[5] = vinit(F);                                                    \
-  input##Idx[6] = vinit(G);                                                    \
+  input##Idx[0] = vfrom(A);                                                    \
+  input##Idx[1] = vfrom(B);                                                    \
+  input##Idx[2] = vfrom(C);                                                    \
+  input##Idx[3] = vfrom(D);                                                    \
+  input##Idx[4] = vfrom(E);                                                    \
+  input##Idx[5] = vfrom(F);                                                    \
+  input##Idx[6] = vfrom(G);                                                    \
   samples[Idx].input.len = 7;                                                  \
   samples[Idx].input.values = input##Idx;                                      \
   samples[Idx].target.len = 11;                                                \
   for (int i = 0; i < 11; i++) {                                               \
-    target##Idx[i] = vinit(i == 10 ? 1.0 : -1.0);                              \
+    target##Idx[i] = vfrom(i == 10 ? 1.0 : -1.0);                              \
   }                                                                            \
   samples[Idx].target.values = target##Idx;
 
@@ -103,7 +103,7 @@ int main(void) {
       nactivate(&net, &samples[i].input, &scratch, &result);
 
       slice_t target = samples[i].target;
-      idx_t loss = vinit(0);
+      idx_t loss = vfrom(0);
       for (int k = 0; k < 11; k++) {
         idx_t yk = result.values[k];
         idx_t tk = target.values[k];
@@ -116,7 +116,7 @@ int main(void) {
 
       for (len_t k = 0; k < SIZE; k++)
         grads[k] = 0;
-      vbackward(loss);
+      tbackpass(loss);
 
       for (len_t j = 0; j < len(params); j++) {
         idx_t idx = params[j];
@@ -146,7 +146,7 @@ int main(void) {
     idx_t xvals[7];
     for (int b = 0; b < 7; b++) {
       value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
-      xvals[b] = vinit(xv);
+      xvals[b] = vfrom(xv);
     }
     slice_t input;
     slinit(&input, 7, xvals);

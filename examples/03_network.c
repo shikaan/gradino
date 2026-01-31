@@ -22,7 +22,7 @@ int main(void) {
   ninit(&net, 2, len(layer_lens), layer_lens, layers, ptrons, params);
 
   slice_t input;
-  idx_t data[2] = {vinit(2.0), vinit(1.0)};
+  idx_t data[2] = {vfrom(2.0), vfrom(1.0)};
   slinit(&input, len(data), data);
   sldbg(&input, "input");
 

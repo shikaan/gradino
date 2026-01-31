@@ -17,7 +17,7 @@ int main(void) {
   pdbg(&ptron, "ptron");
 
   slice_t input;
-  idx_t data[2] = {vinit(2.0), vinit(1.0)};
+  idx_t data[2] = {vfrom(2.0), vfrom(1.0)};
   slinit(&input, 2, data);
   sldbg(&input, "x");
 

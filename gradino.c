@@ -94,9 +94,9 @@ void treset(idx_t mark) {
   TAPE.len = mark;
 }
 
-idx_t vinit(value_t value) {
+idx_t vfrom(value_t value) {
   idx_t pushed = tpushval(value);
-  TAPE.ops[pushed].type = OP_INIT;
+  TAPE.ops[pushed].type = OP_CONST;
   TAPE.ops[pushed].input[0] = pushed;
   TAPE.ops[pushed].output = pushed;
   TAPE.grads[pushed] = 0;
@@ -143,7 +143,7 @@ idx_t vtanh(idx_t a) {
   return pushed;
 }
 
-void vbackward(idx_t start) {
+void tbackpass(idx_t start) {
   TAPE.grads[start] = 1.0;
   for (idx_t i = start + 1; i-- > 0;) {
     op_t *op = topat(i);
@@ -152,7 +152,7 @@ void vbackward(idx_t start) {
     idx_t out = op->output;
 
     switch (op->type) {
-    case OP_INIT:
+    case OP_CONST:
       break;
     case OP_ADD:
       TAPE.grads[in0] += TAPE.grads[out];
@@ -185,7 +185,7 @@ void vdbg(idx_t a, const char *label) {
   // Safe. At this point tat would have already panic-ed otherwise
   op_t op = TAPE.ops[a];
   switch (op.type) {
-  case OP_INIT:
+  case OP_CONST:
     printf("% 4.3f", tvalat(op.input[0]));
     break;
   case OP_ADD:
@@ -218,7 +218,7 @@ void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
 
   slinit(p, nparams, params);
   for (idx_t i = 0; i < nparams; i++) {
-    p->values[i] = vinit(vrand());
+    p->values[i] = vfrom(vrand());
   }
 }
 
@@ -229,7 +229,7 @@ idx_t pactivate(const ptron_t *p, const slice_t *input) {
           p->len - 1, input->len);
 
   // dot product
-  idx_t sum = vinit(0);
+  idx_t sum = vfrom(0);
   for (idx_t i = 0; i < input->len; i++) {
     idx_t w = p->values[i];
     idx_t x = input->values[i];
@@ -308,7 +308,6 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
 
   n->len = nlayers;
   n->layers = layers;
-  n->llens = llens;
 
   linit(&layers[0], nin, llens[0], ptrons, params);
 
@@ -335,10 +334,10 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
 
 void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
                slice_t *result) {
-  len_t max = n->llens[0];
+  len_t max = n->layers[0].len;
   for (len_t i = 1; i < n->len; i++) {
-    if (n->llens[i] > max)
-      max = n->llens[i];
+    if (n->layers[i].len > max)
+      max = n->layers[i].len;
   }
 
   panicif(scratch->len < max, "invalid scratch len: expected %lu, got %lu", max,
@@ -351,7 +350,7 @@ void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
   len_t initlen = scratch->len;
   slice_t linput = *input;
   for (idx_t i = 0; i < n->len - 1; i++) {
-    scratch->len = n->llens[i];
+    scratch->len = n->layers[i].len;
     lactivate(&n->layers[i], &linput, scratch);
     linput.values = scratch->values;
     linput.len = scratch->len;

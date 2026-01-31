@@ -18,15 +18,16 @@ int main(void) {
   op_t ops[SIZE];
   tinit(SIZE, values, grads, ops);
 
-  idx_t a = vinit(2.0);
-  idx_t b = vinit(-3.0);
-  idx_t c = vinit(10.0);
-  idx_t f = vinit(-2.0);
+  // Forward pass
+  idx_t a = vfrom(2.0);
+  idx_t b = vfrom(-3.0);
+  idx_t c = vfrom(10.0);
+  idx_t f = vfrom(-2.0);
   idx_t e = vmul(a, b);
   idx_t d = vadd(e, c);
   idx_t L = vmul(d, f);
 
-  vbackward(L);
+  tbackpass(L);
 
   asserteqf(grads[L], 1.0);
   asserteqf(grads[d], -2.0);

@@ -18,7 +18,7 @@ int main(void) {
   linit(&layer, 3, 3, ptrons, params);
 
   slice_t input;
-  idx_t data[3] = {vinit(2.0), vinit(1.0), vinit(-1.0)};
+  idx_t data[3] = {vfrom(2.0), vfrom(1.0), vfrom(-1.0)};
   slinit(&input, 3, data);
   sldbg(&input, "input");
 

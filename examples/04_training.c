@@ -20,7 +20,7 @@ int main(void) {
   ninit(&net, 3, len(layer_lens), layer_lens, layers, ptrons, params);
 
   slice_t input;
-  idx_t data[3] = {vinit(2), vinit(3), vinit(-1)};
+  idx_t data[3] = {vfrom(2), vfrom(3), vfrom(-1)};
   slinit(&input, len(data), data);
 
   slice_t result;
@@ -34,8 +34,8 @@ int main(void) {
   nactivate(&net, &input, &scratch, &result);
   sldbg(&result, "result");
 
-  const idx_t target = vinit(1);
-  const idx_t mone = vinit(-1);
+  const idx_t target = vfrom(1);
+  const idx_t mone = vfrom(-1);
 
   for (int i = 0; i < 20; i++) {
     nactivate(&net, &input, &scratch, &result);
@@ -46,7 +46,7 @@ int main(void) {
     for (len_t j = 0; j < SIZE; j++)
       grads[j] = 0;
 
-    vbackward(loss);
+    tbackpass(loss);
 
     for (len_t j = 0; j < len(params); j++) {
       idx_t idx = params[j];
