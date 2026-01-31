@@ -1,4 +1,5 @@
 #include "gradino.h"
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +50,7 @@ static void stacktrace(FILE *out) {
   }
 
 static value_t vrand(void) {
-  return (double)((double)arc4random() / RAND_MAX) * 2.0 - 1.0;
+  return (double)((double)rand() / RAND_MAX) * 2.0 - 1.0;
 }
 
 static inline idx_t tpushval(value_t val) {
@@ -114,10 +115,10 @@ idx_t vmul(idx_t a, idx_t b) {
   return pushed;
 }
 
-idx_t vReLU(idx_t a) {
+idx_t vtanh(idx_t a) {
   value_t val = tvalat(a);
-  idx_t pushed = tpushval(val > 0 ? val : 0);
-  TAPE.ops[pushed].type = OP_RELU;
+  idx_t pushed = tpushval(tanh(val));
+  TAPE.ops[pushed].type = OP_TANH;
   TAPE.ops[pushed].input[0] = a;
   TAPE.ops[pushed].output = pushed;
   TAPE.grads[pushed] = 0;
@@ -143,8 +144,9 @@ void vbackward(idx_t start) {
       TAPE.grads[in0] += TAPE.grads[out] * TAPE.values[in1];
       TAPE.grads[in1] += TAPE.grads[out] * TAPE.values[in0];
       break;
-    case OP_RELU:
-      TAPE.grads[in0] += (TAPE.values[out] > 0) * TAPE.grads[out];
+    case OP_TANH:
+      TAPE.grads[in0] +=
+          (1.0 - TAPE.values[out] * TAPE.values[out]) * TAPE.grads[out];
       break;
     default:
       unreacheable();
@@ -170,8 +172,8 @@ void vdbg(idx_t a, const char *label) {
   case OP_MUL:
     printf("% 4.3f * % 4.3f", tvalat(op.input[0]), tvalat(op.input[1]));
     break;
-  case OP_RELU:
-    printf(" ReLU(%4.3f)", tvalat(op.input[0]));
+  case OP_TANH:
+    printf(" tanh(%4.3f)", tvalat(op.input[0]));
     break;
   default:
     break;
@@ -207,7 +209,7 @@ idx_t pactivate(const ptron_t *p, const slice_t *input) {
 
   idx_t bias = p->data[p->len - 1];
   idx_t activation = vadd(sum, bias);
-  return vReLU(activation);
+  return vtanh(activation);
 }
 
 void pdbg(ptron_t *p, const char *label) {
@@ -280,7 +282,8 @@ void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
   }
 }
 
-void nactivate(const net_t *n, const slice_t *input, slice_t *scratch, slice_t *result) {
+void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
+               slice_t *result) {
   // TODO: preconditions
   len_t max = n->llens[0];
   for (len_t i = 1; i < n->len + 1; i++) {

@@ -11,7 +11,7 @@ typedef enum {
   OP_INIT,
   OP_ADD,
   OP_MUL,
-  OP_RELU,
+  OP_TANH,
 } optype_t;
 
 typedef struct {
@@ -52,7 +52,7 @@ void tinit(idx_t n, value_t *data, value_t *grads, op_t *ops);
 idx_t vinit(value_t a);
 idx_t vadd(idx_t a, idx_t b);
 idx_t vmul(idx_t a, idx_t b);
-idx_t vReLU(idx_t a);
+idx_t vtanh(idx_t a);
 void vbackward(idx_t start);
 // Prints the value on stdout
 void vdbg(idx_t a, const char *label);
@@ -71,6 +71,8 @@ idx_t pactivate(const ptron_t *p, const slice_t *input);
 // Prints the perceptron on stdout
 void pdbg(ptron_t *p, const char *label);
 
+void pparams(const ptron_t *l, slice_t *params);
+
 // Initialize a layer of `nout` perceptrons of size `nin`
 void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *values);
 // Activate the perceptrons in the layer against `input`
@@ -80,9 +82,13 @@ void lactivate(const layer_t *l, const slice_t *input, slice_t *result);
 // Prints the layer on stdout
 void ldbg(layer_t *l, const char *label);
 
+void lparams(const layer_t *l, slice_t *params);
+
 void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *values);
 
 void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
                slice_t *result);
 void ndbg(const net_t *n, const char *label);
+
+void nparams(const net_t *n, slice_t *params);
