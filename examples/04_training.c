@@ -16,7 +16,7 @@ int main(void) {
   len_t layer_lens[3] = {4, 4, 1};
   layer_t layers[3];
   ptron_t ptrons[9];
-  idx_t params[37];
+  idx_t params[41];
   ninit(&net, 3, len(layer_lens), layer_lens, layers, ptrons, params);
 
   slice_t input;

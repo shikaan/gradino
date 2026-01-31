@@ -268,32 +268,41 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
 
   linit(&layers[0], nin, llens[0], ptrons, params);
 
-  ptron_t *lptrons = ptrons + llens[0];
-  idx_t *lparams = params + llens[0] * nin;
-  linit(&layers[1], llens[0], llens[1], lptrons, lparams);
+  if (nlayers > 1) {
+    len_t ptron_offset = llens[0];             // sum of previous nout
+    len_t param_offset = llens[0] * (nin + 1); // previous nout * (prev nin + 1)
 
-  for (len_t i = 2; i < nlayers; i++) {
-    len_t lout = llens[i];
-    // input size is the size (i.e., output) of previous layer
-    len_t lin = llens[i - 1];
-    lptrons += lin;
-    lparams += lin * llens[i - 2];
+    ptron_t *lptrons;
+    idx_t *lparams;
+    for (len_t i = 1; i < nlayers; i++) {
+      len_t lin = llens[i - 1];
+      len_t lout = llens[i];
 
-    linit(&layers[i], lin, lout, lptrons, lparams);
+      lptrons = ptrons + ptron_offset;
+      lparams = params + param_offset;
+
+      linit(&layers[i], lin, lout, lptrons, lparams);
+
+      ptron_offset += lout;
+      param_offset += lout * (lin + 1);
+    }
   }
 }
 
 void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
                slice_t *result) {
-  // TODO: preconditions
   len_t max = n->llens[0];
   for (len_t i = 1; i < n->len; i++) {
     if (n->llens[i] > max)
       max = n->llens[i];
   }
 
-  panicif(scratch->len < max, "invalid input len: expected %lu, got %lu", max,
+  panicif(scratch->len < max, "invalid scratch len: expected %lu, got %lu", max,
           scratch->len);
+
+  panicif(input->len != n->layers->ptrons[0].len - 1,
+          "invalid invalid len: expected %lu, got %lu", max,
+          n->layers->ptrons[0].len - 1);
 
   len_t initlen = scratch->len;
   slice_t linput = *input;
