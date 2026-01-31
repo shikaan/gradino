@@ -6,7 +6,7 @@
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
-enum { SIZE = 1 << 18, EPOCHS = 1000 };
+enum { SIZE = 1024, EPOCHS = 10000 };
 
 typedef struct {
   slice_t input;
@@ -168,6 +168,8 @@ int main(void) {
     } else {
       printf("~> %lu\n", pred);
     }
+
+    printf("TAPE utilization %f\n", ((float)tmark() * 100 / (float)SIZE));
   }
 
   return 0;
