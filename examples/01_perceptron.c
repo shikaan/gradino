@@ -12,8 +12,8 @@ int main(void) {
   tinit(SIZE, values, grads, ops);
 
   ptron_t ptron;
-  idx_t params[3];
-  pinit(&ptron, 3, params);
+  idx_t params[2];
+  pinit(&ptron, 2, params);
   pdbg(&ptron, "ptron");
 
   slice_t input;

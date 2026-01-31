@@ -66,8 +66,8 @@ void slinit(slice_t *sl, len_t n, idx_t *data);
 // Prints the slice on stdout
 void sldbg(slice_t *sl, const char *label);
 
-// Intialize a perceptron of size `n` (n wieghts, 1 bias)
-void pinit(ptron_t *p, len_t n, idx_t *data);
+// Intialize a perceptron of size `n+1` (n wieghts, 1 bias)
+void pinit(ptron_t *p, len_t n, idx_t *params);
 // Activate the perceptron (with ReLU) against `input`
 // `input->len` must be `p->len - 1`
 idx_t pactivate(const ptron_t *p, const slice_t *input);

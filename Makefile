@@ -5,7 +5,7 @@ BUILD_TYPE ?= debug
 CC := clang
 
 # Common flags for both builds
-COMMON_CFLAGS := -std=c99 \
+COMMON_CFLAGS := -std=c11 \
 	-Wall \
 	-Wextra \
 	-Werror \
@@ -48,12 +48,17 @@ SHA := dev
 
 ###############################################################################
 
-examples/backprop: gradino.o
-examples/perceptron: gradino.o
-examples/layer: gradino.o
-examples/network: gradino.o
-examples/training: gradino.o
+examples/00_backprop: gradino.o
+examples/01_perceptron: gradino.o
+examples/02_layer: gradino.o
+examples/03_network: gradino.o
+examples/04_training: gradino.o
+
+EXAMPLE := $(wildcard examples/${NR}*.c)
+example:
+	@make $(EXAMPLE:.c=) && ./$(EXAMPLE:.c=)
 
 .PHONY: clean
 clean:
 	rm -rf *.o **/*.o **/*.dSYM main *.dSYM *.plist
+	find ./examples -maxdepth 1 -type f ! -name '*.c' -delete

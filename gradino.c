@@ -182,7 +182,6 @@ void vdbg(idx_t a, const char *label) {
 }
 
 void slinit(slice_t *sl, idx_t n, idx_t *data) {
-  // TODO: check tape capacity
   sl->data = data;
   sl->len = n;
 }
