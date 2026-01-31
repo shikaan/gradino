@@ -61,7 +61,7 @@ static inline idx_t tpushval(value_t val) {
   return idx;
 }
 
-static value_t tvalat(idx_t idx) {
+value_t tvalat(idx_t idx) {
   panicif(idx < 0 || idx >= TAPE.len,
           "index %lu out of bounds (len=%lu, cap=%lu)", idx, TAPE.len,
           TAPE.cap);
@@ -98,6 +98,16 @@ idx_t vinit(value_t value) {
 idx_t vadd(idx_t a, idx_t b) {
   idx_t pushed = tpushval(tvalat(a) + tvalat(b));
   TAPE.ops[pushed].type = OP_ADD;
+  TAPE.ops[pushed].input[0] = a;
+  TAPE.ops[pushed].input[1] = b;
+  TAPE.ops[pushed].output = pushed;
+  TAPE.grads[pushed] = 0;
+  return pushed;
+}
+
+idx_t vsub(idx_t a, idx_t b) {
+  idx_t pushed = tpushval(tvalat(a) - tvalat(b));
+  TAPE.ops[pushed].type = OP_SUB;
   TAPE.ops[pushed].input[0] = a;
   TAPE.ops[pushed].input[1] = b;
   TAPE.ops[pushed].output = pushed;
@@ -148,6 +158,10 @@ void vbackward(idx_t start) {
       TAPE.grads[in0] +=
           (1.0 - TAPE.values[out] * TAPE.values[out]) * TAPE.grads[out];
       break;
+    case OP_SUB:
+      TAPE.grads[in0] += TAPE.grads[out];
+      TAPE.grads[in1] -= TAPE.grads[out];
+      break;
     default:
       unreacheable();
       break;
@@ -174,6 +188,9 @@ void vdbg(idx_t a, const char *label) {
     break;
   case OP_TANH:
     printf(" tanh(%4.3f)", tvalat(op.input[0]));
+    break;
+  case OP_SUB:
+    printf("% 4.3f - % 4.3f", tvalat(op.input[0]), tvalat(op.input[1]));
     break;
   default:
     break;

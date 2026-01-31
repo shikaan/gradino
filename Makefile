@@ -53,6 +53,7 @@ examples/01_perceptron: gradino.o
 examples/02_layer: gradino.o
 examples/03_network: gradino.o
 examples/04_training: gradino.o
+examples/05_inference: gradino.o
 
 EXAMPLE := $(wildcard examples/${NR}*.c)
 example:

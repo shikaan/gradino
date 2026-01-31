@@ -10,6 +10,7 @@ typedef idx_t len_t;
 typedef enum {
   OP_INIT,
   OP_ADD,
+  OP_SUB,
   OP_MUL,
   OP_TANH,
 } optype_t;
@@ -47,10 +48,12 @@ typedef struct {
 } net_t;
 
 void tinit(idx_t n, value_t *data, value_t *grads, op_t *ops);
+value_t tvalat(idx_t idx);
 
 idx_t vinit(value_t a);
 idx_t vadd(idx_t a, idx_t b);
 idx_t vmul(idx_t a, idx_t b);
+idx_t vsub(idx_t a, idx_t b);
 idx_t vtanh(idx_t a);
 void vbackward(idx_t start);
 // Prints the value on stdout
