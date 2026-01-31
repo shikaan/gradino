@@ -5,7 +5,7 @@ BUILD_TYPE ?= debug
 CC := clang
 
 # Common flags for both builds
-COMMON_CFLAGS := -std=c11 \
+COMMON_CFLAGS := -std=c99 \
 	-Wall \
 	-Wextra \
 	-Werror \

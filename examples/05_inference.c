@@ -168,8 +168,6 @@ int main(void) {
     } else {
       printf("~> %lu\n", pred);
     }
-
-    printf("TAPE utilization %f\n", ((float)tmark() * 100 / (float)SIZE));
   }
 
   return 0;

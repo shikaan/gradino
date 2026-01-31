@@ -1,4 +1,5 @@
 #include "gradino.h"
+#include <time.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -83,7 +84,7 @@ void tinit(idx_t len, value_t *data, value_t *grads, op_t *ops) {
   TAPE.cap = len;
 
   // seed the rng
-  sranddev();
+  srand((unsigned)time(NULL));
 }
 
 idx_t tmark(void) { return TAPE.len; }
