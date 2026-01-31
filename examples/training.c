@@ -13,11 +13,11 @@ int main(void) {
   tinit(SIZE, values, grads, ops);
 
   net_t net;
-  len_t layer_lens[4] = {4, 4, 4, 1};
+  len_t layer_lens[3] = {4, 4, 1};
   layer_t layers[3];
   ptron_t ptrons[9];
   idx_t params[37];
-  ninit(&net, len(layer_lens), layer_lens, layers, ptrons, params);
+  ninit(&net, 3, len(layer_lens), layer_lens, layers, ptrons, params);
 
   slice_t input;
   idx_t data[3] = {vinit(2), vinit(3), vinit(-1)};

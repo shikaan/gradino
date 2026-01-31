@@ -15,11 +15,11 @@ int main(void) {
   // A Neural Network of two layers
   // Each layer output size equates to next layer's input size
   net_t net;
-  len_t layer_lens[3] = {3, 4, 2};
+  len_t layer_lens[2] = {4, 2};
   layer_t layers[2];
   ptron_t ptrons[8];
   idx_t params[22];
-  ninit(&net, len(layer_lens), layer_lens, layers, ptrons, params);
+  ninit(&net, 2, len(layer_lens), layer_lens, layers, ptrons, params);
 
   slice_t input;
   idx_t data[2] = {vinit(2.0), vinit(1.0)};

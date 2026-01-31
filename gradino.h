@@ -34,7 +34,10 @@ typedef struct {
 } slice_t;
 
 // [ ...weights | bias ]
-typedef slice_t ptron_t;
+typedef struct {
+  slice_t weights;
+  idx_t bias;
+} ptron_t;
 
 typedef struct {
   ptron_t *ptrons;
@@ -63,7 +66,7 @@ void slinit(slice_t *sl, len_t n, idx_t *data);
 // Prints the slice on stdout
 void sldbg(slice_t *sl, const char *label);
 
-// Intialize a perceptron of size `n` (n-1 wieghts, 1 bias)
+// Intialize a perceptron of size `n` (n wieghts, 1 bias)
 void pinit(ptron_t *p, len_t n, idx_t *data);
 // Activate the perceptron (with ReLU) against `input`
 // `input->len` must be `p->len - 1`
@@ -84,7 +87,7 @@ void ldbg(layer_t *l, const char *label);
 
 void lparams(const layer_t *l, slice_t *params);
 
-void ninit(net_t *n, len_t nlayers, len_t *llens, layer_t *layers,
+void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *values);
 
 void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
