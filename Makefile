@@ -60,6 +60,10 @@ examples/03_network: gradino.o
 examples/04_training: gradino.o
 examples/05_inference: gradino.o
 
+examples: examples/00_backprop examples/01_perceptron \
+	examples/02_layer examples/03_network examples/04_training \
+	examples/05_inference
+
 EXAMPLE := $(wildcard examples/${NR}*.c)
 example:
 	@make $(EXAMPLE:.c=) && ./$(EXAMPLE:.c=)
