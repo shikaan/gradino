@@ -2,7 +2,7 @@
 BUILD_TYPE ?= debug
 
 # Chose the compiler you prefer
-CC := clang
+CC ?= clang
 
 # Common flags for both builds
 COMMON_CFLAGS := -std=c99 \
@@ -25,7 +25,6 @@ COMMON_CFLAGS := -std=c99 \
 	-Wcast-qual \
 	-Wswitch-default \
 	-Wswitch-enum \
-	-Wassign-enum \
 	-Wconversion \
 	-Wno-ignored-qualifiers \
 	-Wno-aggregate-return
@@ -47,6 +46,12 @@ VERSION := v0.0.0
 SHA := dev
 
 ###############################################################################
+
+UNAME_S := $(shell uname)
+
+ifeq ($(UNAME_S),Linux)
+    LDFLAGS += -lm
+endif
 
 examples/00_backprop: gradino.o
 examples/01_perceptron: gradino.o

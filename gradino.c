@@ -9,7 +9,8 @@
 static tape_t TAPE;
 
 #ifdef NDEBUG
-#define panicif(Assertion, Fmt, ...) ((void)0)
+#define paniciff(Assertion, Fmt, ...) ((void)0)
+#define panicif(Assertion, Fmt) ((void)0)
 #else
 #include <execinfo.h>
 
@@ -28,12 +29,24 @@ static void stacktrace(FILE *out) {
   }
 }
 
-#define panicif(Assertion, Fmt, ...)                                           \
+#define paniciff(Assertion, Fmt, ...)                                           \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
     snprintf(buf, sizeof(buf), "%s:%i panic: ", __FILE__, __LINE__);           \
     fputs(buf, stderr);                                                        \
-    snprintf(buf, sizeof(buf), Fmt __VA_OPT__(, ) __VA_ARGS__);                \
+    snprintf(buf, sizeof(buf), Fmt, __VA_ARGS__);                              \
+    fputs(buf, stderr);                                                        \
+    fputs("\n", stderr);                                                       \
+    stacktrace(stderr);                                                        \
+    exit(1);                                                                   \
+  }
+
+#define panicif(Assertion, Fmt)                                           \
+  if (Assertion) {                                                             \
+    char buf[256];                                                             \
+    snprintf(buf, sizeof(buf), "%s:%i panic: ", __FILE__, __LINE__);           \
+    fputs(buf, stderr);                                                        \
+    snprintf(buf, sizeof(buf), Fmt);                              \
     fputs(buf, stderr);                                                        \
     fputs("\n", stderr);                                                       \
     stacktrace(stderr);                                                        \
@@ -55,7 +68,7 @@ static value_t vrand(void) {
 }
 
 static inline idx_t tpushval(value_t val) {
-  panicif(TAPE.len >= TAPE.cap, "buffer full (cap=%lu)", TAPE.cap);
+  paniciff(TAPE.len >= TAPE.cap, "buffer full (cap=%lu)", TAPE.cap);
   idx_t idx = TAPE.len;
   TAPE.values[idx] = val;
   TAPE.len++;
@@ -63,14 +76,14 @@ static inline idx_t tpushval(value_t val) {
 }
 
 value_t tvalat(idx_t idx) {
-  panicif(idx < 0 || idx >= TAPE.len,
+  paniciff(idx >= TAPE.len,
           "index %lu out of bounds (len=%lu, cap=%lu)", idx, TAPE.len,
           TAPE.cap);
   return TAPE.values[idx];
 }
 
 static op_t *topat(idx_t idx) {
-  panicif(idx < 0 || idx >= TAPE.len,
+  paniciff(idx >= TAPE.len,
           "index %lu out of bounds (len=%lu, cap=%lu)", idx, TAPE.len,
           TAPE.cap);
   return &TAPE.ops[idx];
@@ -90,7 +103,7 @@ void tinit(idx_t len, value_t *data, value_t *grads, op_t *ops) {
 idx_t tmark(void) { return TAPE.len; }
 
 void treset(idx_t mark) {
-  panicif(mark >= TAPE.cap, "invalid mark: expect less than %lu, got %lu",
+  paniciff(mark >= TAPE.cap, "invalid mark: expect less than %lu, got %lu",
           TAPE.cap, mark);
   TAPE.len = mark;
 }
@@ -213,9 +226,9 @@ void slinit(slice_t *sl, idx_t n, idx_t *data) {
 }
 
 void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
-  panicif(!p, "ptron cannot be empty", NULL);
-  panicif(nparams == 0, "must have at least one param", NULL);
-  panicif(!params, "must provide params", NULL);
+  panicif(!p, "ptron cannot be empty");
+  panicif(nparams == 0, "must have at least one param");
+  panicif(!params, "must provide params");
 
   slinit(p, nparams, params);
   for (idx_t i = 0; i < nparams; i++) {
@@ -224,9 +237,9 @@ void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
 }
 
 idx_t pactivate(const ptron_t *p, const slice_t *input) {
-  panicif(!p, "ptron cannot be null", NULL);
-  panicif(!input, "input cannot be null", NULL);
-  panicif(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
+  panicif(!p, "ptron cannot be null");
+  panicif(!input, "input cannot be null");
+  paniciff(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
           p->len - 1, input->len);
 
   // dot product
@@ -254,18 +267,18 @@ void pdbg(ptron_t *p, const char *label) {
 void sldbg(slice_t *sl, const char *label) {
   printf("%s\n", label);
   for (idx_t i = 0; i < sl->len; i++) {
-    char buf[16];
+    char buf[32];
     snprintf(buf, sizeof(buf), "  %s[%lu]", label, i);
     vdbg(sl->values[i], buf);
   }
 }
 
 void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
-  panicif(!l, "layer cannot be empty", NULL);
-  panicif(nin == 0, "input size must be positive", NULL);
-  panicif(nout == 0, "output size must be positive", NULL);
-  panicif(!ptrons, "must provide ptrons", NULL);
-  panicif(!params, "must provide params", NULL);
+  panicif(!l, "layer cannot be empty");
+  panicif(nin == 0, "input size must be positive");
+  panicif(nout == 0, "output size must be positive");
+  panicif(!ptrons, "must provide ptrons");
+  panicif(!params, "must provide params");
 
   l->len = nout;
   l->ptrons = ptrons;
@@ -280,8 +293,8 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
 }
 
 void lactivate(const layer_t *l, const slice_t *input, slice_t *result) {
-  panicif(l->len == 0, "layer is empty", NULL);
-  panicif(result->len != l->len, "unexpected result len: expected %lu, got %lu",
+  panicif(l->len == 0, "layer is empty");
+  paniciff(result->len != l->len, "unexpected result len: expected %lu, got %lu",
           l->len, result->len);
   for (idx_t i = 0; i < l->len; i++) {
     result->values[i] = pactivate(&l->ptrons[i], input);
@@ -290,7 +303,7 @@ void lactivate(const layer_t *l, const slice_t *input, slice_t *result) {
 
 void ldbg(layer_t *l, const char *label) {
   printf("%s\n", label);
-  char buf[16];
+  char buf[32];
   for (idx_t i = 0; i < l->len; i++) {
     snprintf(buf, sizeof(buf), "ptron[%lu]", i);
     pdbg(&l->ptrons[i], buf);
@@ -299,13 +312,13 @@ void ldbg(layer_t *l, const char *label) {
 
 void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *params) {
-  panicif(!n, "net cannot be empty", NULL);
-  panicif(nin == 0, "input size must be positive", NULL);
-  panicif(nlayers == 0, "must have at least one layer", NULL);
-  panicif(!llens, "must provide layer lengths", NULL);
-  panicif(!layers, "must provide layers", NULL);
-  panicif(!ptrons, "must provide ptrons", NULL);
-  panicif(!params, "must provide params", NULL);
+  panicif(!n, "net cannot be empty");
+  panicif(nin == 0, "input size must be positive");
+  panicif(nlayers == 0, "must have at least one layer");
+  panicif(!llens, "must provide layer lengths");
+  panicif(!layers, "must provide layers");
+  panicif(!ptrons, "must provide ptrons");
+  panicif(!params, "must provide params");
 
   n->len = nlayers;
   n->layers = layers;
@@ -341,10 +354,10 @@ void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
       max = n->layers[i].len;
   }
 
-  panicif(scratch->len < max, "invalid scratch len: expected %lu, got %lu", max,
+  paniciff(scratch->len < max, "invalid scratch len: expected %lu, got %lu", max,
           scratch->len);
 
-  panicif(input->len != n->layers->ptrons[0].len - 1,
+  paniciff(input->len != n->layers->ptrons[0].len - 1,
           "invalid invalid len: expected %lu, got %lu", max,
           n->layers->ptrons[0].len - 1);
 
@@ -363,7 +376,7 @@ void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
 void ndbg(const net_t *n, const char *label) {
   printf("%s\n", label);
 
-  char buf[16];
+  char buf[32];
   for (idx_t i = 0; i < n->len; i++) {
     snprintf(buf, sizeof(buf), "layer[%lu]", i);
     ldbg(&n->layers[i], buf);
