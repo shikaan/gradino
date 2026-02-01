@@ -4,3 +4,5 @@
 
 examples/*
 !examples/*.c
+compile_commands.json
+.cache
