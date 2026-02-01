@@ -71,6 +71,49 @@ void prepare(void) {
 #undef sample
 }
 
+void prompt(net_t *net, slice_t *scratch, slice_t *result, idx_t mark) {
+  while (1) {
+    treset(mark);
+    printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
+
+    char buf[16];
+    fgets(buf, sizeof(buf), stdin);
+
+    char raw[7];
+    size_t rlen = 0;
+    for (size_t i = 0; i < sizeof(buf) && rlen < 7; i++) {
+      if (!isspace(buf[i]))
+        raw[rlen++] = buf[i];
+    }
+
+    idx_t xvals[7];
+    for (int b = 0; b < 7; b++) {
+      value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
+      xvals[b] = vfrom(xv);
+    }
+    slice_t input;
+    slinit(&input, 7, xvals);
+
+    nactivate(net, &input, scratch, result);
+
+    len_t pred = 0;
+    value_t best_val = tvalat(result->values[0]);
+    for (len_t k = 1; k < 11; k++) {
+      value_t v = tvalat(result->values[k]);
+      if (v > best_val) {
+        best_val = v;
+        pred = k;
+      }
+    }
+
+    if (pred == 10) {
+      printf("~> invalid\n");
+    } else {
+      printf("~> %lu\n", pred);
+    }
+  }
+}
+
 int main(void) {
   value_t values[SIZE], grads[SIZE];
   op_t ops[SIZE];
@@ -94,10 +137,11 @@ int main(void) {
   idx_t sdata[11];
   slinit(&scratch, len(sdata), sdata);
 
+  puts("Training the network. This might take some seconds...");
   for (int epoch = 0; epoch < EPOCHS; epoch++) {
-
+#ifndef NDEBUG 
     value_t epoch_sum = 0.0;
-
+#endif
     for (size_t i = 0; i < len(samples); i++) {
       treset(mark);
       nactivate(&net, &samples[i].input, &scratch, &result);
@@ -112,7 +156,9 @@ int main(void) {
         loss = vadd(loss, lk);
       }
 
+#ifndef NDEBUG 
       epoch_sum += tvalat(loss);
+#endif
 
       for (len_t k = 0; k < SIZE; k++)
         grads[k] = 0;
@@ -123,52 +169,15 @@ int main(void) {
         values[idx] += grads[idx] * -0.005;
       }
     }
-
+    
+#ifndef NDEBUG 
     if (epoch % 10 == 0) {
       printf("epoch %d avg loss: %f\n", epoch, epoch_sum / len(samples));
     }
+#endif
   }
 
-  while (1) {
-    treset(mark);
-    printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
-
-    char buf[16];
-    fgets(buf, sizeof(buf), stdin);
-
-    char raw[7];
-    size_t rlen = 0;
-    for (size_t i = 0; i < sizeof(buf) && rlen < 7; i++) {
-      if (!isspace(buf[i]))
-        raw[rlen++] = buf[i];
-    }
-
-    idx_t xvals[7];
-    for (int b = 0; b < 7; b++) {
-      value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
-      xvals[b] = vfrom(xv);
-    }
-    slice_t input;
-    slinit(&input, 7, xvals);
-
-    nactivate(&net, &input, &scratch, &result);
-
-    len_t pred = 0;
-    value_t best_val = tvalat(result.values[0]);
-    for (len_t k = 1; k < 11; k++) {
-      value_t v = tvalat(result.values[k]);
-      if (v > best_val) {
-        best_val = v;
-        pred = k;
-      }
-    }
-
-    if (pred == 10) {
-      printf("~> invalid\n");
-    } else {
-      printf("~> %lu\n", pred);
-    }
-  }
+  prompt(&net, &scratch, &result, mark);
 
   return 0;
 }
