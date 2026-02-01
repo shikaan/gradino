@@ -1,10 +1,10 @@
 #include "gradino.h"
-#include <time.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static tape_t TAPE;
 
@@ -29,7 +29,7 @@ static void stacktrace(FILE *out) {
   }
 }
 
-#define paniciff(Assertion, Fmt, ...)                                           \
+#define paniciff(Assertion, Fmt, ...)                                          \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
     snprintf(buf, sizeof(buf), "%s:%i panic: ", __FILE__, __LINE__);           \
@@ -41,12 +41,12 @@ static void stacktrace(FILE *out) {
     exit(1);                                                                   \
   }
 
-#define panicif(Assertion, Fmt)                                           \
+#define panicif(Assertion, Fmt)                                                \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
     snprintf(buf, sizeof(buf), "%s:%i panic: ", __FILE__, __LINE__);           \
     fputs(buf, stderr);                                                        \
-    snprintf(buf, sizeof(buf), Fmt);                              \
+    snprintf(buf, sizeof(buf), Fmt);                                           \
     fputs(buf, stderr);                                                        \
     fputs("\n", stderr);                                                       \
     stacktrace(stderr);                                                        \
@@ -76,16 +76,14 @@ static inline idx_t tpushval(value_t val) {
 }
 
 value_t tvalat(idx_t idx) {
-  paniciff(idx >= TAPE.len,
-          "index %lu out of bounds (len=%lu, cap=%lu)", idx, TAPE.len,
-          TAPE.cap);
+  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
+           TAPE.len, TAPE.cap);
   return TAPE.values[idx];
 }
 
 static op_t *topat(idx_t idx) {
-  paniciff(idx >= TAPE.len,
-          "index %lu out of bounds (len=%lu, cap=%lu)", idx, TAPE.len,
-          TAPE.cap);
+  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
+           TAPE.len, TAPE.cap);
   return &TAPE.ops[idx];
 }
 
@@ -104,7 +102,7 @@ idx_t tmark(void) { return TAPE.len; }
 
 void treset(idx_t mark) {
   paniciff(mark >= TAPE.cap, "invalid mark: expect less than %lu, got %lu",
-          TAPE.cap, mark);
+           TAPE.cap, mark);
   TAPE.len = mark;
 }
 
@@ -220,8 +218,8 @@ void vdbg(idx_t a, const char *label) {
   printf("\n");
 }
 
-void slinit(slice_t *sl, idx_t n, idx_t *data) {
-  sl->values = data;
+void vecinit(vec_t *sl, idx_t n, idx_t *data) {
+  sl->at = data;
   sl->len = n;
 }
 
@@ -230,46 +228,46 @@ void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
   panicif(nparams == 0, "must have at least one param");
   panicif(!params, "must provide params");
 
-  slinit(p, nparams, params);
+  vecinit(p, nparams, params);
   for (idx_t i = 0; i < nparams; i++) {
-    p->values[i] = vfrom(vrand());
+    p->at[i] = vfrom(vrand());
   }
 }
 
-idx_t pactivate(const ptron_t *p, const slice_t *input) {
+idx_t pactivate(const ptron_t *p, const vec_t *input) {
   panicif(!p, "ptron cannot be null");
   panicif(!input, "input cannot be null");
   paniciff(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
-          p->len - 1, input->len);
+           p->len - 1, input->len);
 
   // dot product
   idx_t sum = vfrom(0);
   for (idx_t i = 0; i < input->len; i++) {
-    idx_t w = p->values[i];
-    idx_t x = input->values[i];
+    idx_t w = p->at[i];
+    idx_t x = input->at[i];
     idx_t prd = vmul(w, x);
     sum = vadd(sum, prd);
   }
 
-  idx_t activation = vadd(sum, p->values[p->len - 1]);
+  idx_t activation = vadd(sum, p->at[p->len - 1]);
   return vtanh(activation);
 }
 
 void pdbg(ptron_t *p, const char *label) {
   printf("%s\n", label);
-  slice_t weights;
-  weights.values = p->values;
+  vec_t weights;
+  weights.at = p->at;
   weights.len = p->len - 1;
-  sldbg(&weights, "w");
-  vdbg(p->values[p->len - 1], "b");
+  vecdbg(&weights, "w");
+  vdbg(p->at[p->len - 1], "b");
 }
 
-void sldbg(slice_t *sl, const char *label) {
+void vecdbg(vec_t *sl, const char *label) {
   printf("%s\n", label);
   for (idx_t i = 0; i < sl->len; i++) {
     char buf[32];
     snprintf(buf, sizeof(buf), "  %s[%lu]", label, i);
-    vdbg(sl->values[i], buf);
+    vdbg(sl->at[i], buf);
   }
 }
 
@@ -281,7 +279,7 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
   panicif(!params, "must provide params");
 
   l->len = nout;
-  l->ptrons = ptrons;
+  l->at = ptrons;
 
   // nparams for a perceptron is size of input + 1, since the input needs to be
   // as big as the weights
@@ -292,12 +290,12 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
   }
 }
 
-void lactivate(const layer_t *l, const slice_t *input, slice_t *result) {
+void lactivate(const layer_t *l, const vec_t *input, vec_t *result) {
   panicif(l->len == 0, "layer is empty");
-  paniciff(result->len != l->len, "unexpected result len: expected %lu, got %lu",
-          l->len, result->len);
+  paniciff(result->len != l->len,
+           "unexpected result len: expected %lu, got %lu", l->len, result->len);
   for (idx_t i = 0; i < l->len; i++) {
-    result->values[i] = pactivate(&l->ptrons[i], input);
+    result->at[i] = pactivate(&l->at[i], input);
   }
 }
 
@@ -306,7 +304,7 @@ void ldbg(layer_t *l, const char *label) {
   char buf[32];
   for (idx_t i = 0; i < l->len; i++) {
     snprintf(buf, sizeof(buf), "ptron[%lu]", i);
-    pdbg(&l->ptrons[i], buf);
+    pdbg(&l->at[i], buf);
   }
 }
 
@@ -321,7 +319,7 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
   panicif(!params, "must provide params");
 
   n->len = nlayers;
-  n->layers = layers;
+  n->at = layers;
 
   linit(&layers[0], nin, llens[0], ptrons, params);
 
@@ -346,30 +344,30 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
   }
 }
 
-void nactivate(const net_t *n, const slice_t *input, slice_t *scratch,
-               slice_t *result) {
-  len_t max = n->layers[0].len;
+void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
+               vec_t *result) {
+  len_t max = n->at[0].len;
   for (len_t i = 1; i < n->len; i++) {
-    if (n->layers[i].len > max)
-      max = n->layers[i].len;
+    if (n->at[i].len > max)
+      max = n->at[i].len;
   }
 
-  paniciff(scratch->len < max, "invalid scratch len: expected %lu, got %lu", max,
-          scratch->len);
+  paniciff(scratch->len < max, "invalid scratch len: expected %lu, got %lu",
+           max, scratch->len);
 
-  paniciff(input->len != n->layers->ptrons[0].len - 1,
-          "invalid invalid len: expected %lu, got %lu", max,
-          n->layers->ptrons[0].len - 1);
+  paniciff(input->len != n->at->at[0].len - 1,
+           "invalid invalid len: expected %lu, got %lu", max,
+           n->at->at[0].len - 1);
 
   len_t initlen = scratch->len;
-  slice_t linput = *input;
+  vec_t linput = *input;
   for (idx_t i = 0; i < n->len - 1; i++) {
-    scratch->len = n->layers[i].len;
-    lactivate(&n->layers[i], &linput, scratch);
-    linput.values = scratch->values;
+    scratch->len = n->at[i].len;
+    lactivate(&n->at[i], &linput, scratch);
+    linput.at = scratch->at;
     linput.len = scratch->len;
   }
-  lactivate(&n->layers[n->len - 1], &linput, result);
+  lactivate(&n->at[n->len - 1], &linput, result);
   scratch->len = initlen;
 }
 
@@ -379,6 +377,6 @@ void ndbg(const net_t *n, const char *label) {
   char buf[32];
   for (idx_t i = 0; i < n->len; i++) {
     snprintf(buf, sizeof(buf), "layer[%lu]", i);
-    ldbg(&n->layers[i], buf);
+    ldbg(&n->at[i], buf);
   }
 }

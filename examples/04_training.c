@@ -1,7 +1,4 @@
 #include "../gradino.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
@@ -19,20 +16,20 @@ int main(void) {
   idx_t params[41];
   ninit(&net, 3, len(layer_lens), layer_lens, layers, ptrons, params);
 
-  slice_t input;
+  vec_t input;
   idx_t data[3] = {vfrom(2), vfrom(3), vfrom(-1)};
-  slinit(&input, len(data), data);
+  vecinit(&input, len(data), data);
 
-  slice_t result;
+  vec_t result;
   idx_t rdata[1];
-  slinit(&result, len(rdata), rdata);
+  vecinit(&result, len(rdata), rdata);
 
-  slice_t scratch;
+  vec_t scratch;
   idx_t sdata[4];
-  slinit(&scratch, len(sdata), sdata);
+  vecinit(&scratch, len(sdata), sdata);
 
   nactivate(&net, &input, &scratch, &result);
-  sldbg(&result, "result");
+  vecdbg(&result, "result");
 
   const idx_t target = vfrom(1);
   const idx_t mone = vfrom(-1);
@@ -40,7 +37,7 @@ int main(void) {
   for (int i = 0; i < 20; i++) {
     nactivate(&net, &input, &scratch, &result);
 
-    idx_t diff = vadd(target, vmul(result.values[0], mone));
+    idx_t diff = vadd(target, vmul(result.at[0], mone));
     idx_t loss = vmul(diff, diff);
 
     for (len_t j = 0; j < SIZE; j++)
@@ -56,7 +53,7 @@ int main(void) {
     vdbg(loss, "loss");
   }
 
-  sldbg(&result, "result");
+  vecdbg(&result, "result");
 
   return 0;
 }

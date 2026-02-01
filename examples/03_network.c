@@ -1,7 +1,4 @@
 #include "../gradino.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
@@ -21,18 +18,18 @@ int main(void) {
   idx_t params[22];
   ninit(&net, 2, len(layer_lens), layer_lens, layers, ptrons, params);
 
-  slice_t input;
+  vec_t input;
   idx_t data[2] = {vfrom(2.0), vfrom(1.0)};
-  slinit(&input, len(data), data);
-  sldbg(&input, "input");
+  vecinit(&input, len(data), data);
+  vecdbg(&input, "input");
 
-  slice_t result;
+  vec_t result;
   idx_t rdata[2];
-  slinit(&result, len(rdata), rdata);
+  vecinit(&result, len(rdata), rdata);
 
-  slice_t scratch;
+  vec_t scratch;
   idx_t sdata[4];
-  slinit(&scratch, len(sdata), sdata);
+  vecinit(&scratch, len(sdata), sdata);
 
   nactivate(&net, &input, &scratch, &result);
   nactivate(&net, &input, &scratch, &result);
@@ -40,7 +37,7 @@ int main(void) {
   nactivate(&net, &input, &scratch, &result);
   ndbg(&net, "net");
 
-  sldbg(&result, "result");
+  vecdbg(&result, "result");
 
   return 0;
 }

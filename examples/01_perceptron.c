@@ -1,8 +1,4 @@
 #include "../gradino.h"
-#include <complex.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 enum { SIZE = 16 };
 
@@ -16,10 +12,10 @@ int main(void) {
   pinit(&ptron, 3, params);
   pdbg(&ptron, "ptron");
 
-  slice_t input;
+  vec_t input;
   idx_t data[2] = {vfrom(2.0), vfrom(1.0)};
-  slinit(&input, 2, data);
-  sldbg(&input, "x");
+  vecinit(&input, 2, data);
+  vecdbg(&input, "x");
 
   // activation
   idx_t activation = pactivate(&ptron, &input);

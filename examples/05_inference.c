@@ -1,16 +1,13 @@
 #include "../gradino.h"
 #include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
 enum { SIZE = 1024, EPOCHS = 10000 };
 
 typedef struct {
-  slice_t input;
-  slice_t target;
+  vec_t input;
+  vec_t target;
 } sample_t;
 
 static sample_t samples[14];
@@ -26,12 +23,12 @@ void prepare(void) {
   input##Idx[5] = vfrom(F);                                                    \
   input##Idx[6] = vfrom(G);                                                    \
   samples[Idx].input.len = 7;                                                  \
-  samples[Idx].input.values = input##Idx;                                      \
+  samples[Idx].input.at = input##Idx;                                          \
   samples[Idx].target.len = 11;                                                \
   for (int i = 0; i < 11; i++) {                                               \
     target##Idx[i] = vfrom(i == Idx ? 1.0 : -1.0);                             \
   }                                                                            \
-  samples[Idx].target.values = target##Idx;
+  samples[Idx].target.at = target##Idx;
 
   sample(0, 1, 1, 1, 1, 1, 1, -1);
   sample(1, -1, 1, 1, -1, -1, -1, -1);
@@ -55,12 +52,12 @@ void prepare(void) {
   input##Idx[5] = vfrom(F);                                                    \
   input##Idx[6] = vfrom(G);                                                    \
   samples[Idx].input.len = 7;                                                  \
-  samples[Idx].input.values = input##Idx;                                      \
+  samples[Idx].input.at = input##Idx;                                          \
   samples[Idx].target.len = 11;                                                \
   for (int i = 0; i < 11; i++) {                                               \
     target##Idx[i] = vfrom(i == 10 ? 1.0 : -1.0);                              \
   }                                                                            \
-  samples[Idx].target.values = target##Idx;
+  samples[Idx].target.at = target##Idx;
 
   invalid_sample(10, 1, -1, -1, -1, 1, -1, 1);
   invalid_sample(11, -1, -1, 1, -1, 1, -1, -1);
@@ -71,7 +68,7 @@ void prepare(void) {
 #undef sample
 }
 
-void prompt(net_t *net, slice_t *scratch, slice_t *result, idx_t mark) {
+void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
   while (1) {
     treset(mark);
     printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
@@ -91,15 +88,15 @@ void prompt(net_t *net, slice_t *scratch, slice_t *result, idx_t mark) {
       value_t xv = (raw[b] == '1') ? 1.0 : -1.0;
       xvals[b] = vfrom(xv);
     }
-    slice_t input;
-    slinit(&input, 7, xvals);
+    vec_t input;
+    vecinit(&input, 7, xvals);
 
     nactivate(net, &input, scratch, result);
 
     len_t pred = 0;
-    value_t best_val = tvalat(result->values[0]);
+    value_t best_val = tvalat(result->at[0]);
     for (len_t k = 1; k < 11; k++) {
-      value_t v = tvalat(result->values[k]);
+      value_t v = tvalat(result->at[k]);
       if (v > best_val) {
         best_val = v;
         pred = k;
@@ -129,34 +126,34 @@ int main(void) {
   ninit(&net, 7, len(llens), llens, layers, ptrons, params);
   idx_t mark = tmark();
 
-  slice_t result;
+  vec_t result;
   idx_t rdata[11];
-  slinit(&result, len(rdata), rdata);
+  vecinit(&result, len(rdata), rdata);
 
-  slice_t scratch;
+  vec_t scratch;
   idx_t sdata[11];
-  slinit(&scratch, len(sdata), sdata);
+  vecinit(&scratch, len(sdata), sdata);
 
   puts("Training the network. This might take some seconds...");
   for (int epoch = 0; epoch < EPOCHS; epoch++) {
-#ifndef NDEBUG 
+#ifndef NDEBUG
     value_t epoch_sum = 0.0;
 #endif
     for (size_t i = 0; i < len(samples); i++) {
       treset(mark);
       nactivate(&net, &samples[i].input, &scratch, &result);
 
-      slice_t target = samples[i].target;
+      vec_t target = samples[i].target;
       idx_t loss = vfrom(0);
       for (int k = 0; k < 11; k++) {
-        idx_t yk = result.values[k];
-        idx_t tk = target.values[k];
+        idx_t yk = result.at[k];
+        idx_t tk = target.at[k];
         idx_t diff = vsub(tk, yk);
         idx_t lk = vmul(diff, diff);
         loss = vadd(loss, lk);
       }
 
-#ifndef NDEBUG 
+#ifndef NDEBUG
       epoch_sum += tvalat(loss);
 #endif
 
@@ -169,8 +166,8 @@ int main(void) {
         values[idx] += grads[idx] * -0.005;
       }
     }
-    
-#ifndef NDEBUG 
+
+#ifndef NDEBUG
     if (epoch % 10 == 0) {
       printf("epoch %d avg loss: %f\n", epoch, epoch_sum / len(samples));
     }
@@ -178,6 +175,5 @@ int main(void) {
   }
 
   prompt(&net, &scratch, &result, mark);
-
   return 0;
 }
