@@ -7,7 +7,7 @@ enum { SIZE = 1<<16 };
 
 int main(void) {
   void* BUFFER = malloc(tapesize(SIZE));
-  tape_t* tape = tapeinit(SIZE, BUFFER);
+  tapeinit(SIZE, BUFFER);
 
   net_t net;
   len_t layer_lens[3] = {4, 4, 1};
@@ -40,15 +40,9 @@ int main(void) {
     idx_t diff = vadd(target, vmul(result.at[0], mone));
     idx_t loss = vmul(diff, diff);
 
-    for (len_t j = 0; j < SIZE; j++)
-      tape->grads[j] = 0;
-
+    tapezerograd();
     tapebackprop(loss);
-
-    for (len_t j = 0; j < len(params); j++) {
-      idx_t idx = params[j];
-      tape->values[idx] += tape->grads[idx] * -0.005;
-    }
+    ngdstep(&net, 0.005);
 
     vdbg(loss, "loss");
   }

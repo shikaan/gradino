@@ -86,7 +86,7 @@ size_t tapesize(len_t len) {
   return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * len;
 }
 
-tape_t *tapeinit(idx_t len, char *buffer) {
+void tapeinit(idx_t len, char *buffer) {
   uintptr_t addr = (uintptr_t)buffer;
   uintptr_t aligned = (addr + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
 
@@ -105,8 +105,6 @@ tape_t *tapeinit(idx_t len, char *buffer) {
 
   // seed the rng
   srand((unsigned)time(NULL));
-
-  return &TAPE;
 }
 
 #undef MAX_ALIGN
@@ -389,14 +387,14 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
   panicif(!ptrons, "must provide ptrons");
   panicif(!params, "must provide params");
 
-  n->len = nlayers;
-  n->at = layers;
+  n->layers.len = nlayers;
+  n->layers.at = layers;
 
   linit(&layers[0], nin, llens[0], ptrons, params);
 
+  len_t param_offset = llens[0] * (nin + 1); // previous nout * (prev nin + 1)
   if (nlayers > 1) {
-    len_t ptron_offset = llens[0];             // sum of previous nout
-    len_t param_offset = llens[0] * (nin + 1); // previous nout * (prev nin + 1)
+    len_t ptron_offset = llens[0]; // sum of previous nout
 
     ptron_t *lptrons;
     idx_t *lparams;
@@ -413,41 +411,51 @@ void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
       param_offset += lout * (lin + 1);
     }
   }
+
+  n->params.at = params;
+  n->params.len = param_offset;
 }
 
 void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
                vec_t *result) {
-  len_t max = n->at[0].len;
-  for (len_t i = 1; i < n->len; i++) {
-    if (n->at[i].len > max)
-      max = n->at[i].len;
+  len_t max = n->layers.at[0].len;
+  for (len_t i = 1; i < n->layers.len; i++) {
+    if (n->layers.at[i].len > max)
+      max = n->layers.at[i].len;
   }
 
   paniciff(scratch->len < max, "invalid scratch len: expected %lu, got %lu",
            max, scratch->len);
 
-  paniciff(input->len != n->at->at[0].len - 1,
-           "invalid invalid len: expected %lu, got %lu", max,
-           n->at->at[0].len - 1);
+  paniciff(input->len != n->layers.at->at[0].len - 1,
+           "invalid input len: expected %lu, got %lu", max,
+           n->layers.at->at[0].len - 1);
 
   len_t initlen = scratch->len;
   vec_t linput = *input;
-  for (idx_t i = 0; i < n->len - 1; i++) {
-    scratch->len = n->at[i].len;
-    lactivate(&n->at[i], &linput, scratch);
+  for (idx_t i = 0; i < n->layers.len - 1; i++) {
+    scratch->len = n->layers.at[i].len;
+    lactivate(&n->layers.at[i], &linput, scratch);
     linput.at = scratch->at;
     linput.len = scratch->len;
   }
-  lactivate(&n->at[n->len - 1], &linput, result);
+  lactivate(&n->layers.at[n->layers.len - 1], &linput, result);
   scratch->len = initlen;
+}
+
+void ngdstep(const net_t *n, double rate) {
+  for (len_t j = 0; j < n->params.len; j++) {
+    idx_t idx = n->params.at[j];
+    TAPE.values[idx] += TAPE.grads[idx] * -rate;
+  }
 }
 
 void ndbg(const net_t *n, const char *label) {
   printf("%s\n", label);
 
   char buf[32];
-  for (idx_t i = 0; i < n->len; i++) {
+  for (idx_t i = 0; i < n->layers.len; i++) {
     snprintf(buf, sizeof(buf), "layer[%lu]", i);
-    ldbg(&n->at[i], buf);
+    ldbg(&n->layers.at[i], buf);
   }
 }

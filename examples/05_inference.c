@@ -112,9 +112,21 @@ void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
   }
 }
 
+idx_t squarederror(vec_t *result, vec_t *target) {
+  idx_t loss = vfrom(0);
+  for (int k = 0; k < 11; k++) {
+    idx_t yk = result->at[k];
+    idx_t tk = target->at[k];
+    idx_t diff = vsub(tk, yk);
+    idx_t lk = vmul(diff, diff);
+    loss = vadd(loss, lk);
+  }
+  return loss;
+}
+
 int main(void) {
   void *BUFFER = malloc(tapesize(SIZE));
-  tape_t *tape = tapeinit(SIZE, BUFFER);
+  tapeinit(SIZE, BUFFER);
 
   prepare();
 
@@ -142,28 +154,13 @@ int main(void) {
     for (size_t i = 0; i < len(samples); i++) {
       tapereset(mark);
       nactivate(&net, &samples[i].input, &scratch, &result);
-
-      vec_t target = samples[i].target;
-      idx_t loss = vfrom(0);
-      for (int k = 0; k < 11; k++) {
-        idx_t yk = result.at[k];
-        idx_t tk = target.at[k];
-        idx_t diff = vsub(tk, yk);
-        idx_t lk = vmul(diff, diff);
-        loss = vadd(loss, lk);
-      }
-
+      idx_t loss = squarederror(&result, &samples[i].target);
 #ifndef NDEBUG
       epoch_sum += tapeval(loss);
 #endif
-
       tapezerograd();
       tapebackprop(loss);
-
-      for (len_t j = 0; j < len(params); j++) {
-        idx_t idx = params[j];
-        tape->values[idx] += tape->grads[idx] * -0.005;
-      }
+      ngdstep(&net, 0.005);
     }
 
 #ifndef NDEBUG

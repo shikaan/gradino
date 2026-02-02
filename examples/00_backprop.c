@@ -13,7 +13,7 @@
 static char BUFFER[512];
 
 int main(void) {
-  tape_t* t = tapeinit(8, BUFFER);
+  tapeinit(8, BUFFER);
 
   // Forward pass
   idx_t a = vfrom(2.0);
@@ -26,12 +26,12 @@ int main(void) {
 
   tapebackprop(L);
 
-  asserteqf(t->grads[L], 1.0);
-  asserteqf(t->grads[d], -2.0);
-  asserteqf(t->grads[e], -2.0);
-  asserteqf(t->grads[c], -2.0);
-  asserteqf(t->grads[b], -4.0);
-  asserteqf(t->grads[a], 6.0);
+  asserteqf(tapegrad(L), 1.0);
+  asserteqf(tapegrad(d), -2.0);
+  asserteqf(tapegrad(e), -2.0);
+  asserteqf(tapegrad(c), -2.0);
+  asserteqf(tapegrad(b), -4.0);
+  asserteqf(tapegrad(a), 6.0);
 
   return 0;
 }

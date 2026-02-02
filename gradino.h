@@ -54,7 +54,10 @@ typedef vec_t ptron_t;
 typedef Slice(ptron_t) layer_t;
 
 // Network: a slice of layers.
-typedef Slice(layer_t) net_t;
+typedef struct {
+  Slice(layer_t) layers;
+  vec_t params;
+} net_t;
 
 ///
 /// TAPE
@@ -62,7 +65,7 @@ typedef Slice(layer_t) net_t;
 
 size_t tapesize(len_t len);
 // Initialize global tape with provided buffers and capacity n.
-tape_t *tapeinit(idx_t len, char *buffer);
+void tapeinit(idx_t len, char *buffer);
 // Read a value from the tape.
 value_t tapeval(idx_t idx);
 // Read the gradient of a value from the tape.
@@ -132,10 +135,13 @@ void ldbg(layer_t *l, const char *label);
 
 // Initialize a network: input size nin, nlayers with lengths in llens.
 void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
-    ptron_t *ptrons, idx_t *values);
+           ptron_t *ptrons, idx_t *params);
 // Forward a network. Requires: result->len == last_layer->len and
 // scratch->len >= max(layers.len).
 void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
                vec_t *result);
+// Performs a gradient descend step. It can be used for both stochastic and
+// batch gradient descend.
+void ngdstep(const net_t *n, double rate);
 // Debug-print a network.
 void ndbg(const net_t *n, const char *label);
