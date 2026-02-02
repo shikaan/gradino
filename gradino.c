@@ -153,6 +153,40 @@ void tapezerograd(void) {
   }
 }
 
+void tapebackprop(idx_t start) {
+  TAPE.grads[start] = 1.0;
+  for (idx_t i = start + 1; i-- > 0;) {
+    op_t op = tapeop(i);
+    idx_t in0 = op.input[0];
+    idx_t in1 = op.input[1];
+    idx_t out = op.output;
+
+    switch (op.type) {
+    case OP_CONST:
+      break;
+    case OP_ADD:
+      TAPE.grads[in0] += TAPE.grads[out];
+      TAPE.grads[in1] += TAPE.grads[out];
+      break;
+    case OP_MUL:
+      TAPE.grads[in0] += TAPE.grads[out] * TAPE.values[in1];
+      TAPE.grads[in1] += TAPE.grads[out] * TAPE.values[in0];
+      break;
+    case OP_TANH:
+      TAPE.grads[in0] +=
+          (1.0 - TAPE.values[out] * TAPE.values[out]) * TAPE.grads[out];
+      break;
+    case OP_SUB:
+      TAPE.grads[in0] += TAPE.grads[out];
+      TAPE.grads[in1] -= TAPE.grads[out];
+      break;
+    default:
+      unreacheable();
+      break;
+    }
+  }
+}
+
 ///
 /// VALUE
 /// ===
@@ -210,40 +244,6 @@ idx_t vtanh(idx_t a) {
   return pushed;
 }
 
-void tapebackprop(idx_t start) {
-  TAPE.grads[start] = 1.0;
-  for (idx_t i = start + 1; i-- > 0;) {
-    op_t op = tapeop(i);
-    idx_t in0 = op.input[0];
-    idx_t in1 = op.input[1];
-    idx_t out = op.output;
-
-    switch (op.type) {
-    case OP_CONST:
-      break;
-    case OP_ADD:
-      TAPE.grads[in0] += TAPE.grads[out];
-      TAPE.grads[in1] += TAPE.grads[out];
-      break;
-    case OP_MUL:
-      TAPE.grads[in0] += TAPE.grads[out] * TAPE.values[in1];
-      TAPE.grads[in1] += TAPE.grads[out] * TAPE.values[in0];
-      break;
-    case OP_TANH:
-      TAPE.grads[in0] +=
-          (1.0 - TAPE.values[out] * TAPE.values[out]) * TAPE.grads[out];
-      break;
-    case OP_SUB:
-      TAPE.grads[in0] += TAPE.grads[out];
-      TAPE.grads[in1] -= TAPE.grads[out];
-      break;
-    default:
-      unreacheable();
-      break;
-    }
-  }
-}
-
 void vdbg(idx_t a, const char *label) {
   printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tapeval(a), tapegrad(a));
 
@@ -273,10 +273,27 @@ void vdbg(idx_t a, const char *label) {
   printf("\n");
 }
 
+///
+/// VECTOR
+/// ===
+
 void vecinit(vec_t *sl, idx_t n, idx_t *data) {
   sl->at = data;
   sl->len = n;
 }
+
+void vecdbg(vec_t *sl, const char *label) {
+  printf("%s\n", label);
+  for (idx_t i = 0; i < sl->len; i++) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "  %s[%lu]", label, i);
+    vdbg(sl->at[i], buf);
+  }
+}
+
+///
+/// PERCEPTRON
+/// ===
 
 void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
   panicif(!p, "ptron cannot be empty");
@@ -317,14 +334,9 @@ void pdbg(ptron_t *p, const char *label) {
   vdbg(p->at[p->len - 1], "b");
 }
 
-void vecdbg(vec_t *sl, const char *label) {
-  printf("%s\n", label);
-  for (idx_t i = 0; i < sl->len; i++) {
-    char buf[32];
-    snprintf(buf, sizeof(buf), "  %s[%lu]", label, i);
-    vdbg(sl->at[i], buf);
-  }
-}
+///
+/// LAYER
+/// ===
 
 void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
   panicif(!l, "layer cannot be empty");
@@ -362,6 +374,10 @@ void ldbg(layer_t *l, const char *label) {
     pdbg(&l->at[i], buf);
   }
 }
+
+///
+/// NETWORK
+/// ===
 
 void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
            ptron_t *ptrons, idx_t *params) {
