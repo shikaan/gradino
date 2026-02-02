@@ -10,12 +10,10 @@
     exit(1);                                                                   \
   }
 
-enum { SIZE = 8 };
+static char BUFFER[512];
 
 int main(void) {
-  value_t values[SIZE], grads[SIZE];
-  op_t ops[SIZE];
-  tinit(SIZE, values, grads, ops);
+  tape_t* t = tapeinit(8, BUFFER);
 
   // Forward pass
   idx_t a = vfrom(2.0);
@@ -28,12 +26,12 @@ int main(void) {
 
   tbackpass(L);
 
-  asserteqf(grads[L], 1.0);
-  asserteqf(grads[d], -2.0);
-  asserteqf(grads[e], -2.0);
-  asserteqf(grads[c], -2.0);
-  asserteqf(grads[b], -4.0);
-  asserteqf(grads[a], 6.0);
+  asserteqf(t->grads[L], 1.0);
+  asserteqf(t->grads[d], -2.0);
+  asserteqf(t->grads[e], -2.0);
+  asserteqf(t->grads[c], -2.0);
+  asserteqf(t->grads[b], -4.0);
+  asserteqf(t->grads[a], 6.0);
 
   return 0;
 }

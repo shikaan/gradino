@@ -1,11 +1,9 @@
 #include "../gradino.h"
 
-enum { SIZE = 16 };
+static char BUFFER[1024];
 
 int main(void) {
-  value_t values[SIZE], grads[SIZE];
-  op_t ops[SIZE];
-  tinit(SIZE, values, grads, ops);
+  tapeinit(16, BUFFER);
 
   ptron_t ptron;
   idx_t params[3];

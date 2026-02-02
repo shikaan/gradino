@@ -1,5 +1,6 @@
 #include "../gradino.h"
 #include <ctype.h>
+#include <stdlib.h>
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
@@ -112,9 +113,8 @@ void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
 }
 
 int main(void) {
-  value_t values[SIZE], grads[SIZE];
-  op_t ops[SIZE];
-  tinit(SIZE, values, grads, ops);
+  void *BUFFER = malloc(tapesize(SIZE));
+  tape_t *tape = tapeinit(SIZE, BUFFER);
 
   prepare();
 
@@ -158,12 +158,12 @@ int main(void) {
 #endif
 
       for (len_t k = 0; k < SIZE; k++)
-        grads[k] = 0;
+        tape->grads[k] = 0;
       tbackpass(loss);
 
       for (len_t j = 0; j < len(params); j++) {
         idx_t idx = params[j];
-        values[idx] += grads[idx] * -0.005;
+        tape->values[idx] += tape->grads[idx] * -0.005;
       }
     }
 

@@ -56,8 +56,9 @@ typedef Slice(ptron_t) layer_t;
 // Network: a slice of layers.
 typedef Slice(layer_t) net_t;
 
+size_t tapesize(len_t len);
 // Initialize global tape with provided buffers and capacity n.
-void tinit(idx_t n, value_t *data, value_t *grads, op_t *ops);
+tape_t* tapeinit(idx_t len, char* buffer);
 // Read a scalar value from the tape.
 value_t tvalat(idx_t idx);
 // Checkpoint current tape length.

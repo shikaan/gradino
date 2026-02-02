@@ -1,11 +1,10 @@
 #include "../gradino.h"
 
-enum { SIZE = 64 };
-
 int main(void) {
-  value_t values[SIZE], grads[SIZE];
-  op_t ops[SIZE];
-  tinit(SIZE, values, grads, ops);
+  // or 
+  // void* BUFFER = malloc(tapesize(64));
+  static char BUFFER[4096];
+  tapeinit(64, BUFFER);
 
   // Layer of size 3 (# of ptrons) and input size 3 (# weights ptrons)
   // It requires (# of ptrons) * (# of params) values

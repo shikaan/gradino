@@ -87,15 +87,38 @@ static op_t *topat(idx_t idx) {
   return &TAPE.ops[idx];
 }
 
-void tinit(idx_t len, value_t *data, value_t *grads, op_t *ops) {
-  TAPE.values = data;
-  TAPE.grads = grads;
-  TAPE.ops = ops;
+union maxalign {
+  value_t value;
+  op_t operation;
+};
+
+#define MAX_ALIGN sizeof(union maxalign)
+
+size_t tapesize(len_t len) {
+  return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * len;
+}
+
+tape_t* tapeinit(idx_t len, char* buffer) {
+  uintptr_t addr = (uintptr_t)buffer;
+  uintptr_t aligned = (addr + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
+
+  void *ptr = (void *)aligned;
+
+  TAPE.values = ptr;
+  ptr = (value_t *)ptr + len;
+
+  TAPE.grads = ptr;
+  ptr = (value_t *)ptr + len;
+
+  TAPE.ops = ptr;
+
   TAPE.len = 0;
   TAPE.cap = len;
 
   // seed the rng
   srand((unsigned)time(NULL));
+
+  return &TAPE;
 }
 
 idx_t tmark(void) { return TAPE.len; }
