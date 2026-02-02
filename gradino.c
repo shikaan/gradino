@@ -147,6 +147,12 @@ void tapereset(idx_t mark) {
   TAPE.len = mark;
 }
 
+void tapezerograd(void) {
+  for (idx_t i = 0; i < TAPE.len; i++) {
+    TAPE.grads[i] = 0;
+  }
+}
+
 ///
 /// VALUE
 /// ===
@@ -239,7 +245,7 @@ void tapebackprop(idx_t start) {
 }
 
 void vdbg(idx_t a, const char *label) {
-  printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tapeval(a), TAPE.grads[a]);
+  printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tapeval(a), tapegrad(a));
 
   printf("// ");
 

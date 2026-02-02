@@ -71,6 +71,8 @@ idx_t tapemark(void);
 void tapereset(idx_t mark);
 // Calculate gradient components in the tape via backpropagation from start.
 void tapebackprop(idx_t start);
+// Zero the gradient component of all the values in the tape.
+void tapezerograd(void);
 
 // Push a constant scalar onto the tape.
 idx_t vfrom(value_t a);

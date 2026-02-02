@@ -157,8 +157,7 @@ int main(void) {
       epoch_sum += tapeval(loss);
 #endif
 
-      for (len_t k = 0; k < SIZE; k++)
-        tape->grads[k] = 0;
+      tapezerograd();
       tapebackprop(loss);
 
       for (len_t j = 0; j < len(params); j++) {
