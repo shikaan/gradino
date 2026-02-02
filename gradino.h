@@ -56,6 +56,10 @@ typedef Slice(ptron_t) layer_t;
 // Network: a slice of layers.
 typedef Slice(layer_t) net_t;
 
+///
+/// TAPE
+/// ===
+
 size_t tapesize(len_t len);
 // Initialize global tape with provided buffers and capacity n.
 tape_t *tapeinit(idx_t len, char *buffer);
@@ -74,6 +78,10 @@ void tapebackprop(idx_t start);
 // Zero the gradient component of all the values in the tape.
 void tapezerograd(void);
 
+///
+/// VALUE
+/// ===
+
 // Push a constant scalar onto the tape.
 idx_t vfrom(value_t a);
 // Add two recorded values.
@@ -84,33 +92,50 @@ idx_t vmul(idx_t a, idx_t b);
 idx_t vsub(idx_t a, idx_t b);
 // Apply tanh to a recorded value.
 idx_t vtanh(idx_t a);
+// Debug-print a single value.
+void vdbg(idx_t a, const char *label);
+
+///
+/// VECTOR
+/// ===
 
 // Initialize a slice view of length n over an idx_t array.
 void vecinit(vec_t *vec, len_t n, idx_t *data);
+// Debug-print a slice.
+void vecdbg(vec_t *vec, const char *label);
+
+///
+/// PERCEPTRON
+/// ===
+
 // Initialize a perceptron with n params (n-1 weights, 1 bias).
 void pinit(ptron_t *p, len_t n, idx_t *params);
-// Initialize a layer with nout perceptrons, each with (nin+1) params.
-void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *params);
-// Initialize a network: input size nin, nlayers with lengths in llens.
-void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
-           ptron_t *ptrons, idx_t *values);
-
 // Forward a perceptron (tanh) over input. Requires: input->len == p->len - 1.
 idx_t pactivate(const ptron_t *p, const vec_t *input);
+// Debug-print a perceptron.
+void pdbg(ptron_t *p, const char *label);
+
+///
+/// LAYER
+/// ===
+
+// Initialize a layer with nout perceptrons, each with (nin+1) params.
+void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *params);
 // Forward a layer. Requires: result->len == layer->len.
 void lactivate(const layer_t *l, const vec_t *input, vec_t *result);
+// Debug-print a layer.
+void ldbg(layer_t *l, const char *label);
+
+///
+/// NETWORK
+/// ===
+
+// Initialize a network: input size nin, nlayers with lengths in llens.
+void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
+    ptron_t *ptrons, idx_t *values);
 // Forward a network. Requires: result->len == last_layer->len and
 // scratch->len >= max(layers.len).
 void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
                vec_t *result);
-
-// Debug-print a single value.
-void vdbg(idx_t a, const char *label);
-// Debug-print a slice.
-void vecdbg(vec_t *vec, const char *label);
-// Debug-print a perceptron.
-void pdbg(ptron_t *p, const char *label);
-// Debug-print a layer.
-void ldbg(layer_t *l, const char *label);
 // Debug-print a network.
 void ndbg(const net_t *n, const char *label);
