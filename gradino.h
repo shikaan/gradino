@@ -58,15 +58,19 @@ typedef Slice(layer_t) net_t;
 
 size_t tapesize(len_t len);
 // Initialize global tape with provided buffers and capacity n.
-tape_t* tapeinit(idx_t len, char* buffer);
-// Read a scalar value from the tape.
-value_t tvalat(idx_t idx);
-// Checkpoint current tape length.
-idx_t tmark(void);
+tape_t *tapeinit(idx_t len, char *buffer);
+// Read a value from the tape.
+value_t tapeval(idx_t idx);
+// Read the gradient of a value from the tape.
+// It will be zero until a tapebackprop is called.
+value_t tapegrad(idx_t idx);
+// Checkpoint current tape length. Use the mark in tapereset to
+// optimize tape usage.
+idx_t tapemark(void);
 // Reset tape length to a previous checkpoint.
-void treset(idx_t mark);
-// Backward pass starting from a given value.
-void tbackpass(idx_t start);
+void tapereset(idx_t mark);
+// Calculate gradient components in the tape via backpropagation from start.
+void tapebackprop(idx_t start);
 
 // Push a constant scalar onto the tape.
 idx_t vfrom(value_t a);

@@ -43,7 +43,7 @@ int main(void) {
     for (len_t j = 0; j < SIZE; j++)
       tape->grads[j] = 0;
 
-    tbackpass(loss);
+    tapebackprop(loss);
 
     for (len_t j = 0; j < len(params); j++) {
       idx_t idx = params[j];

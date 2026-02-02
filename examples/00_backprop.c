@@ -24,7 +24,7 @@ int main(void) {
   idx_t d = vadd(e, c);
   idx_t L = vmul(d, f);
 
-  tbackpass(L);
+  tapebackprop(L);
 
   asserteqf(t->grads[L], 1.0);
   asserteqf(t->grads[d], -2.0);

@@ -8,6 +8,10 @@
 
 static tape_t TAPE;
 
+///
+/// UTILS
+/// =====
+
 #ifdef NDEBUG
 #define paniciff(Assertion, Fmt, ...) ((void)0)
 #define panicif(Assertion, Fmt) ((void)0)
@@ -29,6 +33,7 @@ static void stacktrace(FILE *out) {
   }
 }
 
+// Abort when a condition is met. Prints a formatted message and a stack trace.
 #define paniciff(Assertion, Fmt, ...)                                          \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
@@ -41,6 +46,8 @@ static void stacktrace(FILE *out) {
     exit(1);                                                                   \
   }
 
+// Abort when a condition is met. Prints a static message and a stack trace.
+// Use paniciff for the formatted version
 #define panicif(Assertion, Fmt)                                                \
   if (Assertion) {                                                             \
     char buf[256];                                                             \
@@ -54,6 +61,7 @@ static void stacktrace(FILE *out) {
   }
 #endif
 
+// Abort execution when a codepath that was thought unreacheable is reached
 #define unreacheable()                                                         \
   {                                                                            \
     char buf[256];                                                             \
@@ -63,29 +71,9 @@ static void stacktrace(FILE *out) {
     exit(1);                                                                   \
   }
 
-static value_t vrand(void) {
-  return (double)((double)rand() / RAND_MAX) * 2.0 - 1.0;
-}
-
-static inline idx_t tpushval(value_t val) {
-  paniciff(TAPE.len >= TAPE.cap, "buffer full (cap=%lu)", TAPE.cap);
-  idx_t idx = TAPE.len;
-  TAPE.values[idx] = val;
-  TAPE.len++;
-  return idx;
-}
-
-value_t tvalat(idx_t idx) {
-  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
-           TAPE.len, TAPE.cap);
-  return TAPE.values[idx];
-}
-
-static op_t *topat(idx_t idx) {
-  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
-           TAPE.len, TAPE.cap);
-  return &TAPE.ops[idx];
-}
+///
+/// TAPE
+/// ===
 
 union maxalign {
   value_t value;
@@ -98,7 +86,7 @@ size_t tapesize(len_t len) {
   return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * len;
 }
 
-tape_t* tapeinit(idx_t len, char* buffer) {
+tape_t *tapeinit(idx_t len, char *buffer) {
   uintptr_t addr = (uintptr_t)buffer;
   uintptr_t aligned = (addr + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
 
@@ -121,12 +109,50 @@ tape_t* tapeinit(idx_t len, char* buffer) {
   return &TAPE;
 }
 
-idx_t tmark(void) { return TAPE.len; }
+#undef MAX_ALIGN
 
-void treset(idx_t mark) {
-  paniciff(mark >= TAPE.cap, "invalid mark: expect less than %lu, got %lu",
-           TAPE.cap, mark);
+// The only way to add to the tape is through pushing. This ensures that the
+// tape will always be topologically sorted, and backpropagation will work.
+static inline idx_t tpushval(value_t val) {
+  paniciff(TAPE.len >= TAPE.cap, "buffer full (cap=%lu)", TAPE.cap);
+  idx_t idx = TAPE.len;
+  TAPE.values[idx] = val;
+  TAPE.len++;
+  return idx;
+}
+
+value_t tapeval(idx_t idx) {
+  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
+           TAPE.len, TAPE.cap);
+  return TAPE.values[idx];
+}
+
+value_t tapegrad(idx_t idx) {
+  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
+           TAPE.len, TAPE.cap);
+  return TAPE.grads[idx];
+}
+
+static op_t tapeop(idx_t idx) {
+  paniciff(idx >= TAPE.len, "index %lu out of bounds (len=%lu, cap=%lu)", idx,
+           TAPE.len, TAPE.cap);
+  return TAPE.ops[idx];
+}
+
+idx_t tapemark(void) { return TAPE.len; }
+
+void tapereset(idx_t mark) {
+  paniciff(mark >= TAPE.cap, "expected mark less than %lu, got %lu", TAPE.cap,
+           mark);
   TAPE.len = mark;
+}
+
+///
+/// VALUE
+/// ===
+
+static value_t vrand(void) {
+  return (double)((double)rand() / RAND_MAX) * 2.0 - 1.0;
 }
 
 idx_t vfrom(value_t value) {
@@ -139,7 +165,7 @@ idx_t vfrom(value_t value) {
 }
 
 idx_t vadd(idx_t a, idx_t b) {
-  idx_t pushed = tpushval(tvalat(a) + tvalat(b));
+  idx_t pushed = tpushval(tapeval(a) + tapeval(b));
   TAPE.ops[pushed].type = OP_ADD;
   TAPE.ops[pushed].input[0] = a;
   TAPE.ops[pushed].input[1] = b;
@@ -149,7 +175,7 @@ idx_t vadd(idx_t a, idx_t b) {
 }
 
 idx_t vsub(idx_t a, idx_t b) {
-  idx_t pushed = tpushval(tvalat(a) - tvalat(b));
+  idx_t pushed = tpushval(tapeval(a) - tapeval(b));
   TAPE.ops[pushed].type = OP_SUB;
   TAPE.ops[pushed].input[0] = a;
   TAPE.ops[pushed].input[1] = b;
@@ -159,7 +185,7 @@ idx_t vsub(idx_t a, idx_t b) {
 }
 
 idx_t vmul(idx_t a, idx_t b) {
-  idx_t pushed = tpushval(tvalat(a) * tvalat(b));
+  idx_t pushed = tpushval(tapeval(a) * tapeval(b));
   TAPE.ops[pushed].type = OP_MUL;
   TAPE.ops[pushed].input[0] = a;
   TAPE.ops[pushed].input[1] = b;
@@ -169,7 +195,7 @@ idx_t vmul(idx_t a, idx_t b) {
 }
 
 idx_t vtanh(idx_t a) {
-  value_t val = tvalat(a);
+  value_t val = tapeval(a);
   idx_t pushed = tpushval(tanh(val));
   TAPE.ops[pushed].type = OP_TANH;
   TAPE.ops[pushed].input[0] = a;
@@ -178,15 +204,15 @@ idx_t vtanh(idx_t a) {
   return pushed;
 }
 
-void tbackpass(idx_t start) {
+void tapebackprop(idx_t start) {
   TAPE.grads[start] = 1.0;
   for (idx_t i = start + 1; i-- > 0;) {
-    op_t *op = topat(i);
-    idx_t in0 = op->input[0];
-    idx_t in1 = op->input[1];
-    idx_t out = op->output;
+    op_t op = tapeop(i);
+    idx_t in0 = op.input[0];
+    idx_t in1 = op.input[1];
+    idx_t out = op.output;
 
-    switch (op->type) {
+    switch (op.type) {
     case OP_CONST:
       break;
     case OP_ADD:
@@ -213,7 +239,7 @@ void tbackpass(idx_t start) {
 }
 
 void vdbg(idx_t a, const char *label) {
-  printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tvalat(a), TAPE.grads[a]);
+  printf("%s = Value{ % 4.3f | % 4.3f }; ", label, tapeval(a), TAPE.grads[a]);
 
   printf("// ");
 
@@ -221,19 +247,19 @@ void vdbg(idx_t a, const char *label) {
   op_t op = TAPE.ops[a];
   switch (op.type) {
   case OP_CONST:
-    printf("% 4.3f", tvalat(op.input[0]));
+    printf("% 4.3f", tapeval(op.input[0]));
     break;
   case OP_ADD:
-    printf("% 4.3f + % 4.3f", tvalat(op.input[0]), tvalat(op.input[1]));
+    printf("% 4.3f + % 4.3f", tapeval(op.input[0]), tapeval(op.input[1]));
     break;
   case OP_MUL:
-    printf("% 4.3f * % 4.3f", tvalat(op.input[0]), tvalat(op.input[1]));
+    printf("% 4.3f * % 4.3f", tapeval(op.input[0]), tapeval(op.input[1]));
     break;
   case OP_TANH:
-    printf(" tanh(%4.3f)", tvalat(op.input[0]));
+    printf(" tanh(%4.3f)", tapeval(op.input[0]));
     break;
   case OP_SUB:
-    printf("% 4.3f - % 4.3f", tvalat(op.input[0]), tvalat(op.input[1]));
+    printf("% 4.3f - % 4.3f", tapeval(op.input[0]), tapeval(op.input[1]));
     break;
   default:
     break;

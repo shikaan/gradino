@@ -71,7 +71,7 @@ void prepare(void) {
 
 void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
   while (1) {
-    treset(mark);
+    tapereset(mark);
     printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
 
     char buf[16];
@@ -95,9 +95,9 @@ void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
     nactivate(net, &input, scratch, result);
 
     len_t pred = 0;
-    value_t best_val = tvalat(result->at[0]);
+    value_t best_val = tapeval(result->at[0]);
     for (len_t k = 1; k < 11; k++) {
-      value_t v = tvalat(result->at[k]);
+      value_t v = tapeval(result->at[k]);
       if (v > best_val) {
         best_val = v;
         pred = k;
@@ -124,7 +124,7 @@ int main(void) {
   ptron_t ptrons[19];
   idx_t params[163];
   ninit(&net, 7, len(llens), llens, layers, ptrons, params);
-  idx_t mark = tmark();
+  idx_t mark = tapemark();
 
   vec_t result;
   idx_t rdata[11];
@@ -140,7 +140,7 @@ int main(void) {
     value_t epoch_sum = 0.0;
 #endif
     for (size_t i = 0; i < len(samples); i++) {
-      treset(mark);
+      tapereset(mark);
       nactivate(&net, &samples[i].input, &scratch, &result);
 
       vec_t target = samples[i].target;
@@ -154,12 +154,12 @@ int main(void) {
       }
 
 #ifndef NDEBUG
-      epoch_sum += tvalat(loss);
+      epoch_sum += tapeval(loss);
 #endif
 
       for (len_t k = 0; k < SIZE; k++)
         tape->grads[k] = 0;
-      tbackpass(loss);
+      tapebackprop(loss);
 
       for (len_t j = 0; j < len(params); j++) {
         idx_t idx = params[j];
