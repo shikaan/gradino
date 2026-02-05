@@ -4,20 +4,17 @@
 A tiny autodiff engine and neural network library in C.
 </p>
 
-> [!WARNING]
-> Experimental and evolving. APIs may change and things may break.
-
 gradino is a small ISO C99 library that:
 - records scalar ops on a global tape and supports reverse-mode autodiff
 - builds simple feed-forward networks (tanh)
 - lets you train with squared error and do inference via argmax
 - can perform **zero heap allocations** — you provide all buffers
 
-It's intended for learning and tinkering, not production.
-
 ### Zero allocation mode
 
-gradino can run without calling `malloc`. You allocate memory once (stack or heap) and pass buffers to the library via `tapeinit`/`netinit`. Convenience wrappers (`tapecreate`/`netcreate`) are also available for heap allocation. When using heap allocation, you can bring your own allocator by defining `GRADINO_ALLOC` and `GRADINO_FREE` before including the header:
+gradino can run without calling `malloc`. You allocate memory once (stack or heap) and pass buffers to the library via `tapeinit`/`netinit`. Convenience wrappers (`tapecreate`/`netcreate`) are also available for heap allocation. 
+
+When using heap allocation, you can bring your own allocator by defining `GRADINO_ALLOC` and `GRADINO_FREE` before including the header:
 
 ```c
 #define GRADINO_ALLOC my_alloc
@@ -54,8 +51,6 @@ make example NR=03
 - Single activation function (`tanh`)
 - No built-in loss functions or optimizers — you write the training loop
 - Global tape, not thread-safe
-- No GPU support
-- API is minimal and subject to change
 
 ## License
 
