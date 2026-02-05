@@ -34,7 +34,7 @@ The zero-allocation mode makes it:
 ## Usage
 
 - Copy-paste `gradino.c` and `gradino.h` in your project and you're done.
-
+- See [`gradino.h`](./gradino.h) for the full API documentation and examples.
 - [Train a tiny network to recognize 7-part digits](./examples/03_inference.c)
 
 ```sh

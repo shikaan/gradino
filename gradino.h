@@ -75,6 +75,21 @@ typedef struct {
 ///
 /// TAPE
 /// ===
+///
+/// The tape is a global, append-only log of operations. Every math op (vadd,
+/// vmul, vtanh, ...) appends a record. This is the foundation for autodiff.
+///
+/// The tape must be initialized before any other call. Either provide your own
+/// buffer or let the library allocate:
+///
+///   // Option 1: caller-managed buffer
+///   static char buf[4096];
+///   tapeinit(1024, sizeof(buf), buf);
+///
+///   // Option 2: heap allocation
+///   void *tape = tapecreate(1024);
+///   // ... use the tape ...
+///   GRADINO_FREE(tape);
 
 // Return the buffer size required for a tape with given capacity.
 size_t tapesize(len_t n);
@@ -100,6 +115,16 @@ void tapezerograd(void);
 ///
 /// VALUE
 /// ===
+///
+/// Values are indices into the tape. Every operation returns a new index
+/// and records the operation so gradients can be computed later.
+///
+///   idx_t a = vfrom(2.0);
+///   idx_t b = vfrom(3.0);
+///   idx_t c = vmul(a, b);    // c = 6.0
+///   tapebackprop(c);
+///   tapegrad(a);              // dc/da = 3.0
+///   tapegrad(b);              // dc/db = 2.0
 
 // Push a constant scalar onto the tape.
 idx_t vfrom(value_t a);
@@ -117,6 +142,13 @@ void vdbg(idx_t a, const char *label);
 ///
 /// VECTOR
 /// ===
+///
+/// A vec_t is a contiguous view over an array of value indices. It does not
+/// own the underlying memory.
+///
+///   vec_t v;
+///   idx_t data[3] = {vfrom(1.0), vfrom(2.0), vfrom(3.0)};
+///   vecinit(&v, 3, data);
 
 // Initialize a slice view of length n over an idx_t array.
 void vecinit(vec_t *vec, len_t n, idx_t *data);
@@ -126,6 +158,33 @@ void vecdbg(vec_t *vec, const char *label);
 ///
 /// NETWORK
 /// ===
+///
+/// A feed-forward network of dense layers with tanh activation. Layer sizes
+/// are specified as an array: {input, hidden..., output}.
+///
+///   // Option 1: caller-managed buffer
+///   len_t layers[] = {2, 4, 1};
+///   net_t net;
+///   static char buf[2048];
+///   netinit(&net, 3, layers, sizeof(buf), buf);
+///
+///   // Option 2: heap allocation
+///   net_t *net = netcreate(3, layers);
+///
+///   // Forward pass
+///   vec_t input, result;
+///   idx_t idata[2] = {vfrom(1.0), vfrom(0.5)};
+///   idx_t rdata[1];
+///   vecinit(&input, 2, idata);
+///   vecinit(&result, 1, rdata);
+///   netfwd(net, &input, &result);
+///
+///   // Backprop and update
+///   idx_t loss = vsub(result.at[0], vfrom(0.8));
+///   tapebackprop(loss);
+///   netgdstep(net, 0.01);
+///
+///   GRADINO_FREE(net);
 
 // Return the buffer size required for a network with given layer sizes.
 // nlens is the number of elements in llens, llens[i] is the size of layer i.
