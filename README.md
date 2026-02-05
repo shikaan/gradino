@@ -1,7 +1,7 @@
 <h1 align="center">gradino</h1>
 
 <p align="center">
-A tiny, zero-allocation autodiff engine and neural network library in C.
+A tiny autodiff engine and neural network library in C.
 </p>
 
 > [!WARNING]
@@ -9,15 +9,15 @@ A tiny, zero-allocation autodiff engine and neural network library in C.
 
 gradino is a small ISO C99 library that:
 - records scalar ops on a global tape and supports reverse-mode autodiff
-- builds perceptrons, layers, and simple feed-forward networks (tanh)
+- builds simple feed-forward networks (tanh)
 - lets you train with squared error and do inference via argmax
-- performs **zero heap allocations** — you provide all buffers
+- can perform **zero heap allocations** — you provide all buffers
 
 It's intended for learning and tinkering, not production.
 
-### Why zero allocation?
+### Zero allocation mode
 
-gradino never calls `malloc`. You allocate memory once (stack or heap) and pass buffers to the library. This makes it:
+gradino can run without calling `malloc`. You allocate memory once (stack or heap) and pass buffers to the library via `tapeinit`/`netinit`. Convenience wrappers (`tapecreate`/`netcreate`) are also available for heap allocation. The zero-allocation mode makes it:
 
 - **Embedded-friendly**: no heap, no allocator, predictable memory footprint
 - **Cache-friendly**: all data lives in contiguous, caller-controlled arrays
@@ -27,19 +27,19 @@ gradino never calls `malloc`. You allocate memory once (stack or heap) and pass 
 
 - Copy-paste `gradino.c` and `gradino.h` in your project and you're done.
 
-- [Train a tiny network to recognize 7-part digits](./examples/05_inference.c)
+- [Train a tiny network to recognize 7-part digits](./examples/03_inference.c)
 
 ```sh
-# Build example number 05
-make example NR=05
+# Build example number 03
+make example NR=03
 ```
 
 ## How it works
 
 - **Tape**: A linear log of operations. Every math op (`vadd`, `vmul`, `vtanh`, ...) appends a record of what happened and where the result went. This is the foundation for autodiff.
 - **Reverse-mode autodiff**: `tapebackprop(idx)` walks the tape backward from `idx`, applying the chain rule to accumulate gradients in `tape->grads`.
-- **Abstractions**: Values compose into perceptrons (weights + bias + tanh), perceptrons into layers, layers into networks. Each level is just a thin wrapper over the one below.
-- **Memory model**: You allocate one contiguous buffer and pass it to `tapeinit`. All values, gradients, and ops live there. The library never allocates.
+- **Abstractions**: Values compose into perceptrons, perceptrons into layers, layers into networks. These internals are hidden behind the network API (`netinit`/`netcreate`, `netfwd`, `netgdstep`).
+- **Memory model**: All values, gradients, and ops live in contiguous buffers. You can provide your own (`tapeinit`/`netinit`) or let the library allocate (`tapecreate`/`netcreate`).
 
 ## Status and limitations
 

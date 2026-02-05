@@ -69,6 +69,8 @@ typedef struct {
 size_t tapesize(len_t n);
 // Initialize global tape with given capacity using provided buffer.
 void tapeinit(len_t n, len_t nbuf, char *buffer);
+// Allocate and initialize a tape with given capacity. Free with free(3).
+void *tapecreate(len_t n);
 // Read a value from the tape.
 value_t tapeval(idx_t idx);
 // Read the gradient of a value from the tape.
@@ -120,6 +122,8 @@ size_t netsize(len_t nlens, len_t *llens);
 // Initialize a network with given layer sizes using provided buffer.
 // nlens is the number of elements in llens, llens[i] is the size of layer i.
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
+// Allocate and initialize a network with given layer sizes. Free with free(3).
+net_t *netcreate(len_t nlens, len_t *llens);
 // Forward pass through the network.
 // Requires: input->len == llens[0], result->len == llens[nlens-1].
 void netfwd(net_t *n, const vec_t *input, vec_t *result);

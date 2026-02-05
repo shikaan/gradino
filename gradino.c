@@ -114,6 +114,15 @@ void tapeinit(len_t n, len_t nbuf, char *buffer) {
   srand((unsigned)time(NULL));
 }
 
+void *tapecreate(len_t n) {
+  len_t nbuf = tapesize(n);
+  char *buffer = malloc(nbuf);
+  if (!buffer)
+    return NULL;
+  tapeinit(n, nbuf, buffer);
+  return buffer;
+}
+
 #undef MAX_ALIGN
 
 // The only way to add to the tape is through pushing. This ensures that the
@@ -459,6 +468,16 @@ void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
   ptr = (idx_t *)ptr + n->params.len;
   n->scratch.at = ptr;
   n->scratch.len = nscratch;
+}
+
+net_t *netcreate(len_t nlens, len_t *llens) {
+  len_t nbuf = netsize(nlens, llens);
+  void *buffer = malloc(sizeof(net_t) + nbuf);
+  if (!buffer)
+    return NULL;
+  net_t *n = buffer;
+  netinit(n, nlens, llens, nbuf, (char *)buffer + sizeof(net_t));
+  return n;
 }
 
 #undef MAX_ALIGN

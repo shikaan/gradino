@@ -3,17 +3,15 @@
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
+// This example uses heap allocation via tapecreate/netcreate.
+// See 02_training for static allocation via tapeinit/netinit.
 int main(void) {
-  len_t tapesz = tapesize(1 << 14);
-  void *tapebuf = malloc(tapesz);
-  tapeinit(1 << 14, tapesz, tapebuf);
+  void *tapebuf = tapecreate(1 << 14);
 
   // A Neural Network of two layers and input of size two
   // Each layer output size equates to next layer's input size
-  net_t net;
   len_t layer_lens[3] = {2, 4, 2};
-  static char netbuf[2048];
-  netinit(&net, len(layer_lens), layer_lens, sizeof(netbuf), netbuf);
+  net_t *net = netcreate(len(layer_lens), layer_lens);
 
   vec_t input;
   idx_t data[2] = {vfrom(2.0), vfrom(1.0)};
@@ -24,10 +22,13 @@ int main(void) {
   idx_t rdata[2];
   vecinit(&result, len(rdata), rdata);
 
-  netfwd(&net, &input, &result);
-  netdbg(&net, "net");
+  netfwd(net, &input, &result);
+  netdbg(net, "net");
 
   vecdbg(&result, "result");
+
+  free(net);
+  free(tapebuf);
 
   return 0;
 }

@@ -5,16 +5,16 @@
 
 enum { SIZE = 1 << 16 };
 
+// This example uses malloc with tapeinit/netinit.
+// See 01_network for heap allocation via tapecreate/netcreate.
+// See 03_inference for static allocation.
 int main(void) {
-  // See examples/05_inference for static allocation examples
   len_t tapesz = tapesize(SIZE);
   void *tapebuf = malloc(tapesz);
   tapeinit(SIZE, tapesz, tapebuf);
 
   net_t net;
   len_t layer_lens[4] = {3, 4, 4, 1};
-
-  // See examples/05_inference for static allocation examples
   len_t netsz = netsize(len(layer_lens), layer_lens);
   void *netbuf = malloc(netsz);
   if (!netbuf)
