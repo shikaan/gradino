@@ -125,17 +125,19 @@ idx_t squarederror(vec_t *result, vec_t *target) {
 }
 
 int main(void) {
-  void *BUFFER = malloc(tapesize(SIZE));
-  tapeinit(SIZE, BUFFER);
+  // See examples/04_training for a malloc example
+  static char tapebuf[1 << 16];
+  tapeinit(SIZE, tapebuf);
 
   prepare();
 
   net_t net;
-  len_t llens[2] = {8, 11};
-  layer_t layers[2];
-  ptron_t ptrons[19];
-  idx_t params[163];
-  ninit(&net, 7, len(llens), llens, layers, ptrons, params);
+  len_t llens[3] = {7, 8, 11};
+  // See examples/04_training for a malloc example
+  static char netbuf[1 << 11]; 
+
+  netinit(&net, len(llens), llens, sizeof(netbuf), netbuf);
+  
   idx_t mark = tapemark();
 
   vec_t result;

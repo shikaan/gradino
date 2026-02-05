@@ -377,44 +377,70 @@ void ldbg(layer_t *l, const char *label) {
 /// NETWORK
 /// ===
 
-void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
-           ptron_t *ptrons, idx_t *params) {
-  panicif(!n, "net cannot be empty");
-  panicif(nin == 0, "input size must be positive");
-  panicif(nlayers == 0, "must have at least one layer");
-  panicif(!llens, "must provide layer lengths");
-  panicif(!layers, "must provide layers");
-  panicif(!ptrons, "must provide ptrons");
-  panicif(!params, "must provide params");
+union netalign {
+  ptron_t p;
+  layer_t l;
+  idx_t i;
+};
 
-  n->layers.len = nlayers;
-  n->layers.at = layers;
+#define MAX_ALIGN sizeof(union netalign)
 
-  linit(&layers[0], nin, llens[0], ptrons, params);
+len_t netsize(len_t nlens, len_t *layers) {
+  panicif(nlens == 0 || !layers, "layers must be defined and not empty");
+  len_t nparams = 0;
+  len_t nptrons = 0;
+  for (len_t i = 1; i < nlens; i++) {
+    nparams += (layers[i - 1] + 1) * layers[i];
+    nptrons += layers[i];
+  }
+  return MAX_ALIGN + sizeof(ptron_t) * nptrons + sizeof(idx_t) * nparams +
+         sizeof(layer_t) * nlens;
+}
 
-  len_t param_offset = llens[0] * (nin + 1); // previous nout * (prev nin + 1)
-  if (nlayers > 1) {
-    len_t ptron_offset = llens[0]; // sum of previous nout
+void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
+  panicif(!buffer, "must provide buffer");
+  paniciff(nbuf < netsize(nlens, llens),
+           "buffer too small; expected at least %lu, got %lu",
+           netsize(nlens, llens), nbuf);
+  (void)nbuf; // silence unused warning for release builds
 
-    ptron_t *lptrons;
-    idx_t *lparams;
-    for (len_t i = 1; i < nlayers; i++) {
-      len_t lin = llens[i - 1];
-      len_t lout = llens[i];
+  uintptr_t addr = (uintptr_t)buffer;
+  uintptr_t aligned = (addr + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
 
-      lptrons = ptrons + ptron_offset;
-      lparams = params + param_offset;
+  void *ptr = (void *)aligned;
 
-      linit(&layers[i], lin, lout, lptrons, lparams);
+  n->layers.len = nlens - 1;
+  n->layers.at = ptr;
 
-      ptron_offset += lout;
-      param_offset += lout * (lin + 1);
-    }
+  ptr = (layer_t *)ptr + n->layers.len;
+  ptron_t *ptrons = ptr;
+
+  len_t nptrons = 0;
+  for (len_t i = 1; i < nlens; i++)
+    nptrons += llens[i];
+
+  ptr = (ptron_t *)ptr + nptrons;
+  idx_t *params = ptr;
+
+  linit(&n->layers.at[0], llens[0], llens[1], ptrons, params);
+
+  len_t param_offset = llens[1] * (llens[0] + 1);
+  len_t ptron_offset = llens[1];
+  ptron_t *lptrons;
+  idx_t *lparams;
+  for (len_t i = 1; i < nlens - 1; i++) {
+    lptrons = ptrons + ptron_offset;
+    lparams = params + param_offset;
+    linit(&n->layers.at[i], llens[i], llens[i + 1], lptrons, lparams);
+    param_offset += llens[i + 1] * (llens[i] + 1);
+    ptron_offset += llens[i+1];
   }
 
   n->params.at = params;
   n->params.len = param_offset;
 }
+
+#undef MAX_ALIGN
 
 void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
                vec_t *result) {

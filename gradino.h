@@ -1,6 +1,7 @@
 #pragma once
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #define Slice(Type)                                                            \
@@ -133,9 +134,10 @@ void ldbg(layer_t *l, const char *label);
 /// NETWORK
 /// ===
 
-// Initialize a network: input size nin, nlayers with lengths in llens.
-void ninit(net_t *n, len_t nin, len_t nlayers, len_t *llens, layer_t *layers,
-           ptron_t *ptrons, idx_t *params);
+size_t netsize(len_t nlens, len_t* llens);
+
+void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
+
 // Forward a network. Requires: result->len == last_layer->len and
 // scratch->len >= max(layers.len).
 void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,

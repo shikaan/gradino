@@ -6,15 +6,19 @@
 enum { SIZE = 1<<16 };
 
 int main(void) {
-  void* BUFFER = malloc(tapesize(SIZE));
-  tapeinit(SIZE, BUFFER);
+  // See examples/05_inference for static allocation examples
+  void* tapebuf = malloc(tapesize(SIZE));
+  tapeinit(SIZE, tapebuf);
 
   net_t net;
-  len_t layer_lens[3] = {4, 4, 1};
-  layer_t layers[3];
-  ptron_t ptrons[9];
-  idx_t params[41];
-  ninit(&net, 3, len(layer_lens), layer_lens, layers, ptrons, params);
+  len_t layer_lens[4] = {3, 4, 4, 1};
+  
+  // See examples/05_inference for static allocation examples
+  len_t netsz = netsize(len(layer_lens), layer_lens);
+  void* netbuf = malloc(netsz);
+  if (!netbuf) return 1;
+
+  netinit(&net, len(layer_lens), layer_lens, netsz, netbuf);
 
   vec_t input;
   idx_t data[3] = {vfrom(2), vfrom(3), vfrom(-1)};
