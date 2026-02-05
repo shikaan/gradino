@@ -1,0 +1,14 @@
+{
+  "configurations": {
+    "run": {
+      "adapter": "CodeLLDB",
+      "configuration": {
+        "request": "launch",
+        "program": "${workspaceRoot}/examples/05_inference",
+        "args": [],
+        "cwd": "${workspaceRoot}",
+        "stopAtEntry": true
+      }
+    }
+  }
+}
