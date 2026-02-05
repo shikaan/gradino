@@ -23,11 +23,7 @@ int main(void) {
   idx_t rdata[2];
   vecinit(&result, len(rdata), rdata);
 
-  vec_t scratch;
-  idx_t sdata[4];
-  vecinit(&scratch, len(sdata), sdata);
-
-  nactivate(&net, &input, &scratch, &result);
+  netfwd(&net, &input, &result);
   ndbg(&net, "net");
 
   vecdbg(&result, "result");

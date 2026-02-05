@@ -58,6 +58,7 @@ typedef Slice(ptron_t) layer_t;
 typedef struct {
   Slice(layer_t) layers;
   vec_t params;
+  vec_t scratch;
 } net_t;
 
 ///
@@ -134,14 +135,11 @@ void ldbg(layer_t *l, const char *label);
 /// NETWORK
 /// ===
 
-size_t netsize(len_t nlens, len_t* llens);
-
+size_t netsize(len_t nlens, len_t *llens);
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
-
 // Forward a network. Requires: result->len == last_layer->len and
 // scratch->len >= max(layers.len).
-void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
-               vec_t *result);
+void netfwd(net_t *n, const vec_t *input, vec_t *result);
 // Performs a gradient descend step. It can be used for both stochastic and
 // batch gradient descend.
 void ngdstep(const net_t *n, double rate);

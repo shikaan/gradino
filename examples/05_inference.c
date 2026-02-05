@@ -69,7 +69,7 @@ void prepare(void) {
 #undef sample
 }
 
-void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
+void prompt(net_t *net, vec_t *result, idx_t mark) {
   while (1) {
     tapereset(mark);
     printf("enter a 7-bit sequence (e.g., 0110000 for 1, 1101101 for 2): ");
@@ -92,7 +92,7 @@ void prompt(net_t *net, vec_t *scratch, vec_t *result, idx_t mark) {
     vec_t input;
     vecinit(&input, 7, xvals);
 
-    nactivate(net, &input, scratch, result);
+    netfwd(net, &input, result);
 
     len_t pred = 0;
     value_t best_val = tapeval(result->at[0]);
@@ -134,19 +134,15 @@ int main(void) {
   net_t net;
   len_t llens[3] = {7, 8, 11};
   // See examples/04_training for a malloc example
-  static char netbuf[1 << 11]; 
+  static char netbuf[1 << 11];
 
   netinit(&net, len(llens), llens, sizeof(netbuf), netbuf);
-  
+
   idx_t mark = tapemark();
 
   vec_t result;
   idx_t rdata[11];
   vecinit(&result, len(rdata), rdata);
-
-  vec_t scratch;
-  idx_t sdata[11];
-  vecinit(&scratch, len(sdata), sdata);
 
   puts("Training the network. This might take some seconds...");
   for (int epoch = 0; epoch < EPOCHS; epoch++) {
@@ -155,7 +151,7 @@ int main(void) {
 #endif
     for (size_t i = 0; i < len(samples); i++) {
       tapereset(mark);
-      nactivate(&net, &samples[i].input, &scratch, &result);
+      netfwd(&net, &samples[i].input, &result);
       idx_t loss = squarederror(&result, &samples[i].target);
 #ifndef NDEBUG
       epoch_sum += tapeval(loss);
@@ -172,6 +168,6 @@ int main(void) {
 #endif
   }
 
-  prompt(&net, &scratch, &result, mark);
+  prompt(&net, &result, mark);
   return 0;
 }

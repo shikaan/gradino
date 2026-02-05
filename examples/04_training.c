@@ -28,18 +28,14 @@ int main(void) {
   idx_t rdata[1];
   vecinit(&result, len(rdata), rdata);
 
-  vec_t scratch;
-  idx_t sdata[4];
-  vecinit(&scratch, len(sdata), sdata);
-
-  nactivate(&net, &input, &scratch, &result);
+  netfwd(&net, &input, &result);
   vecdbg(&result, "result");
 
   const idx_t target = vfrom(1);
   const idx_t mone = vfrom(-1);
 
   for (int i = 0; i < 20; i++) {
-    nactivate(&net, &input, &scratch, &result);
+    netfwd(&net, &input, &result);
 
     idx_t diff = vadd(target, vmul(result.at[0], mone));
     idx_t loss = vmul(diff, diff);

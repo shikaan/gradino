@@ -71,6 +71,8 @@ static void stacktrace(FILE *out) {
     exit(1);                                                                   \
   }
 
+static inline len_t max(len_t a, len_t b) { return a > b ? a : b; }
+
 ///
 /// TAPE
 /// ===
@@ -385,16 +387,18 @@ union netalign {
 
 #define MAX_ALIGN sizeof(union netalign)
 
-len_t netsize(len_t nlens, len_t *layers) {
-  panicif(nlens == 0 || !layers, "layers must be defined and not empty");
+len_t netsize(len_t nlens, len_t *llens) {
+  panicif(nlens == 0 || !llens, "layers must be defined and not empty");
   len_t nparams = 0;
   len_t nptrons = 0;
+  len_t nscratch = llens[0];
   for (len_t i = 1; i < nlens; i++) {
-    nparams += (layers[i - 1] + 1) * layers[i];
-    nptrons += layers[i];
+    nparams += (llens[i - 1] + 1) * llens[i];
+    nptrons += llens[i];
+    nscratch = max(llens[i], nscratch);
   }
   return MAX_ALIGN + sizeof(ptron_t) * nptrons + sizeof(idx_t) * nparams +
-         sizeof(layer_t) * nlens;
+         sizeof(layer_t) * nlens + nscratch * sizeof(idx_t);
 }
 
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
@@ -423,6 +427,7 @@ void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
   idx_t *params = ptr;
 
   linit(&n->layers.at[0], llens[0], llens[1], ptrons, params);
+  len_t nscratch = llens[0];
 
   len_t param_offset = llens[1] * (llens[0] + 1);
   len_t ptron_offset = llens[1];
@@ -431,42 +436,41 @@ void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
   for (len_t i = 1; i < nlens - 1; i++) {
     lptrons = ptrons + ptron_offset;
     lparams = params + param_offset;
+
     linit(&n->layers.at[i], llens[i], llens[i + 1], lptrons, lparams);
+    nscratch = max(llens[i], nscratch);
+
     param_offset += llens[i + 1] * (llens[i] + 1);
-    ptron_offset += llens[i+1];
+    ptron_offset += llens[i + 1];
   }
+
+  nscratch = max(llens[nlens - 1], nscratch);
 
   n->params.at = params;
   n->params.len = param_offset;
+
+  // Reserve some space at the end of the buffer for the scratch area that we
+  // need during the forward pass
+  ptr = (idx_t *)ptr + n->params.len;
+  n->scratch.at = ptr;
+  n->scratch.len = nscratch;
 }
 
 #undef MAX_ALIGN
 
-void nactivate(const net_t *n, const vec_t *input, vec_t *scratch,
-               vec_t *result) {
-  len_t max = n->layers.at[0].len;
-  for (len_t i = 1; i < n->layers.len; i++) {
-    if (n->layers.at[i].len > max)
-      max = n->layers.at[i].len;
-  }
-
-  paniciff(scratch->len < max, "invalid scratch len: expected %lu, got %lu",
-           max, scratch->len);
-
+void netfwd(net_t *n, const vec_t *input, vec_t *result) {
   paniciff(input->len != n->layers.at->at[0].len - 1,
-           "invalid input len: expected %lu, got %lu", max,
+           "invalid input len: expected %lu, got %lu", input->len,
            n->layers.at->at[0].len - 1);
 
-  len_t initlen = scratch->len;
   vec_t linput = *input;
   for (idx_t i = 0; i < n->layers.len - 1; i++) {
-    scratch->len = n->layers.at[i].len;
-    lactivate(&n->layers.at[i], &linput, scratch);
-    linput.at = scratch->at;
-    linput.len = scratch->len;
+    n->scratch.len = n->layers.at[i].len;
+    lactivate(&n->layers.at[i], &linput, &n->scratch);
+    linput.at = n->scratch.at;
+    linput.len = n->scratch.len;
   }
   lactivate(&n->layers.at[n->layers.len - 1], &linput, result);
-  scratch->len = initlen;
 }
 
 void ngdstep(const net_t *n, double rate) {
