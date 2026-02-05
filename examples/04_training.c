@@ -42,7 +42,7 @@ int main(void) {
 
     tapezerograd();
     tapebackprop(loss);
-    ngdstep(&net, 0.005);
+    netgdstep(&net, 0.005);
 
     vdbg(loss, "loss");
   }

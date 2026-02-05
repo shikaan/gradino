@@ -24,7 +24,7 @@ int main(void) {
   vecinit(&result, len(rdata), rdata);
 
   netfwd(&net, &input, &result);
-  ndbg(&net, "net");
+  netdbg(&net, "net");
 
   vecdbg(&result, "result");
 

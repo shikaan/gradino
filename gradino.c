@@ -473,14 +473,14 @@ void netfwd(net_t *n, const vec_t *input, vec_t *result) {
   lactivate(&n->layers.at[n->layers.len - 1], &linput, result);
 }
 
-void ngdstep(const net_t *n, double rate) {
+void netgdstep(const net_t *n, double rate) {
   for (len_t j = 0; j < n->params.len; j++) {
     idx_t idx = n->params.at[j];
     TAPE.values[idx] += TAPE.grads[idx] * -rate;
   }
 }
 
-void ndbg(const net_t *n, const char *label) {
+void netdbg(const net_t *n, const char *label) {
   printf("%s\n", label);
 
   char buf[32];

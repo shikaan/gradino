@@ -142,6 +142,6 @@ void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
 void netfwd(net_t *n, const vec_t *input, vec_t *result);
 // Performs a gradient descend step. It can be used for both stochastic and
 // batch gradient descend.
-void ngdstep(const net_t *n, double rate);
+void netgdstep(const net_t *n, double rate);
 // Debug-print a network.
-void ndbg(const net_t *n, const char *label);
+void netdbg(const net_t *n, const char *label);

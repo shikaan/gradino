@@ -158,7 +158,7 @@ int main(void) {
 #endif
       tapezerograd();
       tapebackprop(loss);
-      ngdstep(&net, 0.005);
+      netgdstep(&net, 0.005);
     }
 
 #ifndef NDEBUG
