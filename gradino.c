@@ -84,13 +84,13 @@ union maxalign {
 
 #define MAX_ALIGN sizeof(union maxalign)
 
-size_t tapesize(len_t len) {
-  return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * len;
+size_t tapesize(len_t n) {
+  return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * n;
 }
 
-void tapeinit(len_t len, len_t nbuf, char *buffer) {
-  paniciff(tapesize(len) > nbuf,
-           "buffer too small; expected at least %lu, got %lu", tapesize(len),
+void tapeinit(len_t n, len_t nbuf, char *buffer) {
+  paniciff(tapesize(n) > nbuf,
+           "buffer too small; expected at least %lu, got %lu", tapesize(n),
            nbuf);
   (void)nbuf; // silence unused warning for release builds
 
@@ -100,15 +100,15 @@ void tapeinit(len_t len, len_t nbuf, char *buffer) {
   void *ptr = (void *)aligned;
 
   TAPE.values = ptr;
-  ptr = (value_t *)ptr + len;
+  ptr = (value_t *)ptr + n;
 
   TAPE.grads = ptr;
-  ptr = (value_t *)ptr + len;
+  ptr = (value_t *)ptr + n;
 
   TAPE.ops = ptr;
 
   TAPE.len = 0;
-  TAPE.cap = len;
+  TAPE.cap = n;
 
   // seed the rng
   srand((unsigned)time(NULL));
@@ -282,9 +282,9 @@ void vdbg(idx_t a, const char *label) {
 /// VECTOR
 /// ===
 
-void vecinit(vec_t *sl, idx_t n, idx_t *data) {
-  sl->at = data;
-  sl->len = n;
+void vecinit(vec_t *vec, len_t n, idx_t *data) {
+  vec->at = data;
+  vec->len = n;
 }
 
 void vecdbg(vec_t *sl, const char *label) {
@@ -300,7 +300,7 @@ void vecdbg(vec_t *sl, const char *label) {
 /// PERCEPTRON
 /// ===
 
-void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
+static void pinit(ptron_t *p, len_t nparams, idx_t *params) {
   panicif(!p, "ptron cannot be empty");
   panicif(nparams == 0, "must have at least one param");
   panicif(!params, "must provide params");
@@ -311,7 +311,7 @@ void pinit(ptron_t *p, idx_t nparams, idx_t *params) {
   }
 }
 
-idx_t pactivate(const ptron_t *p, const vec_t *input) {
+static idx_t pactivate(const ptron_t *p, const vec_t *input) {
   panicif(!p, "ptron cannot be null");
   panicif(!input, "input cannot be null");
   paniciff(input->len != p->len - 1, "invalid input len: expected %lu, got %lu",
@@ -330,7 +330,7 @@ idx_t pactivate(const ptron_t *p, const vec_t *input) {
   return vtanh(activation);
 }
 
-void pdbg(ptron_t *p, const char *label) {
+static void pdbg(ptron_t *p, const char *label) {
   printf("%s\n", label);
   vec_t weights;
   weights.at = p->at;
@@ -343,7 +343,7 @@ void pdbg(ptron_t *p, const char *label) {
 /// LAYER
 /// ===
 
-void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
+static void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *params) {
   panicif(!l, "layer cannot be empty");
   panicif(nin == 0, "input size must be positive");
   panicif(nout == 0, "output size must be positive");
@@ -362,7 +362,7 @@ void linit(layer_t *l, idx_t nin, idx_t nout, ptron_t *ptrons, idx_t *params) {
   }
 }
 
-void lactivate(const layer_t *l, const vec_t *input, vec_t *result) {
+static void lactivate(const layer_t *l, const vec_t *input, vec_t *result) {
   panicif(l->len == 0, "layer is empty");
   paniciff(result->len != l->len,
            "unexpected result len: expected %lu, got %lu", l->len, result->len);
@@ -371,7 +371,7 @@ void lactivate(const layer_t *l, const vec_t *input, vec_t *result) {
   }
 }
 
-void ldbg(layer_t *l, const char *label) {
+static void ldbg(layer_t *l, const char *label) {
   printf("%s\n", label);
   char buf[32];
   for (idx_t i = 0; i < l->len; i++) {

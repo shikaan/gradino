@@ -65,9 +65,10 @@ typedef struct {
 /// TAPE
 /// ===
 
-size_t tapesize(len_t len);
-// Initialize global tape with provided buffers and capacity n.
-void tapeinit(idx_t len, len_t nbuf, char *buffer);
+// Return the buffer size required for a tape with given capacity.
+size_t tapesize(len_t n);
+// Initialize global tape with given capacity using provided buffer.
+void tapeinit(len_t n, len_t nbuf, char *buffer);
 // Read a value from the tape.
 value_t tapeval(idx_t idx);
 // Read the gradient of a value from the tape.
@@ -110,35 +111,17 @@ void vecinit(vec_t *vec, len_t n, idx_t *data);
 void vecdbg(vec_t *vec, const char *label);
 
 ///
-/// PERCEPTRON
-/// ===
-
-// Initialize a perceptron with n params (n-1 weights, 1 bias).
-void pinit(ptron_t *p, len_t n, idx_t *params);
-// Forward a perceptron (tanh) over input. Requires: input->len == p->len - 1.
-idx_t pactivate(const ptron_t *p, const vec_t *input);
-// Debug-print a perceptron.
-void pdbg(ptron_t *p, const char *label);
-
-///
-/// LAYER
-/// ===
-
-// Initialize a layer with nout perceptrons, each with (nin+1) params.
-void linit(layer_t *l, len_t nin, len_t nout, ptron_t *ptrons, idx_t *params);
-// Forward a layer. Requires: result->len == layer->len.
-void lactivate(const layer_t *l, const vec_t *input, vec_t *result);
-// Debug-print a layer.
-void ldbg(layer_t *l, const char *label);
-
-///
 /// NETWORK
 /// ===
 
+// Return the buffer size required for a network with given layer sizes.
+// nlens is the number of elements in llens, llens[i] is the size of layer i.
 size_t netsize(len_t nlens, len_t *llens);
+// Initialize a network with given layer sizes using provided buffer.
+// nlens is the number of elements in llens, llens[i] is the size of layer i.
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
-// Forward a network. Requires: result->len == last_layer->len and
-// scratch->len >= max(layers.len).
+// Forward pass through the network.
+// Requires: input->len == llens[0], result->len == llens[nlens-1].
 void netfwd(net_t *n, const vec_t *input, vec_t *result);
 // Performs a gradient descend step. It can be used for both stochastic and
 // batch gradient descend.

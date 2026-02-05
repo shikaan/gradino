@@ -54,15 +54,12 @@ ifeq ($(UNAME_S),Linux)
 endif
 
 examples/00_backprop: gradino.o
-examples/01_perceptron: gradino.o
-examples/02_layer: gradino.o
-examples/03_network: gradino.o
-examples/04_training: gradino.o
-examples/05_inference: gradino.o
+examples/01_network: gradino.o
+examples/02_training: gradino.o
+examples/03_inference: gradino.o
 
-examples: examples/00_backprop examples/01_perceptron \
-	examples/02_layer examples/03_network examples/04_training \
-	examples/05_inference
+examples: examples/00_backprop examples/01_network \
+	examples/02_training examples/03_inference
 
 EXAMPLE := $(wildcard examples/${NR}*.c)
 example:
