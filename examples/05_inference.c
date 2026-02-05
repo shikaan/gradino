@@ -127,7 +127,7 @@ idx_t squarederror(vec_t *result, vec_t *target) {
 int main(void) {
   // See examples/04_training for a malloc example
   static char tapebuf[1 << 16];
-  tapeinit(SIZE, tapebuf);
+  tapeinit(SIZE, sizeof(tapebuf), tapebuf);
 
   prepare();
 

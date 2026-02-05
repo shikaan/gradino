@@ -67,7 +67,7 @@ typedef struct {
 
 size_t tapesize(len_t len);
 // Initialize global tape with provided buffers and capacity n.
-void tapeinit(idx_t len, char *buffer);
+void tapeinit(idx_t len, len_t nbuf, char *buffer);
 // Read a value from the tape.
 value_t tapeval(idx_t idx);
 // Read the gradient of a value from the tape.

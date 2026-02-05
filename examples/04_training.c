@@ -3,20 +3,22 @@
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
-enum { SIZE = 1<<16 };
+enum { SIZE = 1 << 16 };
 
 int main(void) {
   // See examples/05_inference for static allocation examples
-  void* tapebuf = malloc(tapesize(SIZE));
-  tapeinit(SIZE, tapebuf);
+  len_t tapesz = tapesize(SIZE);
+  void *tapebuf = malloc(tapesz);
+  tapeinit(SIZE, tapesz, tapebuf);
 
   net_t net;
   len_t layer_lens[4] = {3, 4, 4, 1};
-  
+
   // See examples/05_inference for static allocation examples
   len_t netsz = netsize(len(layer_lens), layer_lens);
-  void* netbuf = malloc(netsz);
-  if (!netbuf) return 1;
+  void *netbuf = malloc(netsz);
+  if (!netbuf)
+    return 1;
 
   netinit(&net, len(layer_lens), layer_lens, netsz, netbuf);
 

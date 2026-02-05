@@ -10,10 +10,9 @@
     exit(1);                                                                   \
   }
 
-static char BUFFER[512];
-
 int main(void) {
-  tapeinit(8, BUFFER);
+  static char tapebuf[512];
+  tapeinit(8, sizeof(tapebuf), tapebuf);
 
   // Forward pass
   idx_t a = vfrom(2.0);

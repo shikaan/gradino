@@ -1,9 +1,8 @@
 #include "../gradino.h"
 
-static char BUFFER[1024];
-
 int main(void) {
-  tapeinit(16, BUFFER);
+  static char tapebuf[1024];
+  tapeinit(16, sizeof(tapebuf), tapebuf);
 
   ptron_t ptron;
   idx_t params[3];

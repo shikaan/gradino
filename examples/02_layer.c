@@ -3,8 +3,8 @@
 int main(void) {
   // or 
   // void* BUFFER = malloc(tapesize(64));
-  static char BUFFER[4096];
-  tapeinit(64, BUFFER);
+  static char tapebuf[4096];
+  tapeinit(64, sizeof(tapebuf), tapebuf);
 
   // Layer of size 3 (# of ptrons) and input size 3 (# weights ptrons)
   // It requires (# of ptrons) * (# of params) values

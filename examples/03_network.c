@@ -4,8 +4,9 @@
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
 
 int main(void) {
-  void *tapebuf = malloc(tapesize(1 << 14));
-  tapeinit(1 << 14, tapebuf);
+  len_t tapesz = tapesize(1 << 14);
+  void *tapebuf = malloc(tapesz);
+  tapeinit(1 << 14, tapesz, tapebuf);
 
   // A Neural Network of two layers and input of size two
   // Each layer output size equates to next layer's input size

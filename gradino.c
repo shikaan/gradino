@@ -88,7 +88,12 @@ size_t tapesize(len_t len) {
   return MAX_ALIGN + (sizeof(value_t) * 2 + sizeof(op_t)) * len;
 }
 
-void tapeinit(idx_t len, char *buffer) {
+void tapeinit(len_t len, len_t nbuf, char *buffer) {
+  paniciff(tapesize(len) > nbuf,
+           "buffer too small; expected at least %lu, got %lu", tapesize(len),
+           nbuf);
+  (void)nbuf; // silence unused warning for release builds
+
   uintptr_t addr = (uintptr_t)buffer;
   uintptr_t aligned = (addr + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
 
