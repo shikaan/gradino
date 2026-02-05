@@ -3,6 +3,17 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+// Define GRADINO_ALLOC and GRADINO_FREE before including this header
+// to use a custom allocator with tapecreate/netcreate.
+#ifndef GRADINO_ALLOC
+#define GRADINO_ALLOC malloc
+#endif
+
+#ifndef GRADINO_FREE
+#define GRADINO_FREE free
+#endif
 
 #define Slice(Type)                                                            \
   struct {                                                                     \
@@ -69,7 +80,7 @@ typedef struct {
 size_t tapesize(len_t n);
 // Initialize global tape with given capacity using provided buffer.
 void tapeinit(len_t n, len_t nbuf, char *buffer);
-// Allocate and initialize a tape with given capacity. Free with free(3).
+// Allocate and initialize a tape with given capacity. Free with GRADINO_FREE.
 void *tapecreate(len_t n);
 // Read a value from the tape.
 value_t tapeval(idx_t idx);
@@ -122,7 +133,7 @@ size_t netsize(len_t nlens, len_t *llens);
 // Initialize a network with given layer sizes using provided buffer.
 // nlens is the number of elements in llens, llens[i] is the size of layer i.
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
-// Allocate and initialize a network with given layer sizes. Free with free(3).
+// Allocate and initialize a network with given layer sizes. Free with GRADINO_FREE.
 net_t *netcreate(len_t nlens, len_t *llens);
 // Forward pass through the network.
 // Requires: input->len == llens[0], result->len == llens[nlens-1].

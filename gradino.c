@@ -116,7 +116,7 @@ void tapeinit(len_t n, len_t nbuf, char *buffer) {
 
 void *tapecreate(len_t n) {
   len_t nbuf = tapesize(n);
-  char *buffer = malloc(nbuf);
+  char *buffer = GRADINO_ALLOC(nbuf);
   if (!buffer)
     return NULL;
   tapeinit(n, nbuf, buffer);
@@ -472,7 +472,7 @@ void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer) {
 
 net_t *netcreate(len_t nlens, len_t *llens) {
   len_t nbuf = netsize(nlens, llens);
-  void *buffer = malloc(sizeof(net_t) + nbuf);
+  void *buffer = GRADINO_ALLOC(sizeof(net_t) + nbuf);
   if (!buffer)
     return NULL;
   net_t *n = buffer;

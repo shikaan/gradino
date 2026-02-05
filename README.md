@@ -17,7 +17,15 @@ It's intended for learning and tinkering, not production.
 
 ### Zero allocation mode
 
-gradino can run without calling `malloc`. You allocate memory once (stack or heap) and pass buffers to the library via `tapeinit`/`netinit`. Convenience wrappers (`tapecreate`/`netcreate`) are also available for heap allocation. The zero-allocation mode makes it:
+gradino can run without calling `malloc`. You allocate memory once (stack or heap) and pass buffers to the library via `tapeinit`/`netinit`. Convenience wrappers (`tapecreate`/`netcreate`) are also available for heap allocation. When using heap allocation, you can bring your own allocator by defining `GRADINO_ALLOC` and `GRADINO_FREE` before including the header:
+
+```c
+#define GRADINO_ALLOC my_alloc
+#define GRADINO_FREE  my_free
+#include "gradino.h"
+```
+
+The zero-allocation mode makes it:
 
 - **Embedded-friendly**: no heap, no allocator, predictable memory footprint
 - **Cache-friendly**: all data lives in contiguous, caller-controlled arrays

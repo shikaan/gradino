@@ -11,8 +11,5 @@ IN PROGRESS
 
 TODO
 ---
- - * make tapeinit check on buffer size
- - * provide convenience methods with heap allocations (tapecreate, netcreate)
  - * convenience to initialize a vector
- - @ remove low-level (perceptrons, layers) APIs from public interface
  - # document the API surface

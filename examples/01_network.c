@@ -27,8 +27,8 @@ int main(void) {
 
   vecdbg(&result, "result");
 
-  free(net);
-  free(tapebuf);
+  GRADINO_FREE(net);
+  GRADINO_FREE(tapebuf);
 
   return 0;
 }
