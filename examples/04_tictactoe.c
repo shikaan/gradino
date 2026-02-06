@@ -1,5 +1,4 @@
 #include "../gradino.h"
-#include <math.h>
 #include <string.h>
 
 #define len(Arr) sizeof(Arr) / sizeof(Arr[0])
@@ -166,7 +165,7 @@ static void play(net_t *net, idx_t mark) {
         netfwd(net, &input, &result);
 
         int maxscorecell = -1;
-        value_t maxscore = -INFINITY;
+        value_t maxscore = -1000; // A low number to be overriden
         for (int i = 0; i < CELLS; i++) {
           if (board[i] != 0)
             continue;
