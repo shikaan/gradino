@@ -32,7 +32,7 @@ COMMON_CFLAGS := -std=c99 \
 DEBUG_CFLAGS := -g -O0 -fsanitize=address,undefined -DDEBUG
 
 # Release-specific flags
-RELEASE_CFLAGS := -O2 -DNDEBUG
+RELEASE_CFLAGS := -O3 -DNDEBUG
 
 # Set flags based on build type
 ifeq ($(BUILD_TYPE),release)
@@ -47,10 +47,11 @@ SHA := dev
 
 ###############################################################################
 
+LDFLAGS := -ffast-math
 UNAME_S := $(shell uname)
 
 ifeq ($(UNAME_S),Linux)
-    LDFLAGS += -lm
+    LDLIBS += -lm
 endif
 
 examples/00_backprop: gradino.o
@@ -59,8 +60,8 @@ examples/02_training: gradino.o
 examples/03_inference: gradino.o
 examples/04_tictactoe: gradino.o
 
-examples: examples/00_backprop examples/01_network \
-	examples/02_training examples/03_inference
+examples: examples/00_backprop examples/01_network examples/02_training \
+	examples/03_inference examples/04_tictactoe
 
 EXAMPLE := $(wildcard examples/${NR}*.c)
 example:
