@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+///
+/// CONFIGURATION
+/// ===
+///
+/// The following values are here to be tweaked by you, the user. You can change
+/// allocators, use different precision for the values, and different number
+/// type as a tape handle.
+
 // Define GRADINO_ALLOC and GRADINO_FREE before including this header
 // to use a custom allocator with tapecreate/netcreate.
 #ifndef GRADINO_ALLOC
@@ -15,12 +23,6 @@
 #define GRADINO_FREE free
 #endif
 
-#define Slice(Type)                                                            \
-  struct {                                                                     \
-    len_t len;                                                                 \
-    Type *at;                                                                  \
-  }
-
 // The type of the underlying scalars used in the network.
 typedef double value_t;
 
@@ -30,6 +32,17 @@ typedef unsigned long idx_t;
 
 // Represents lengths (for slices and buffers) in the same type as idx_t.
 typedef idx_t len_t;
+
+///
+/// STRUCTURES
+/// ===
+
+// Generic view over an array
+#define Slice(Type)                                                            \
+  struct {                                                                     \
+    len_t len;                                                                 \
+    Type *at;                                                                  \
+  }
 
 // A contiguous view of value indices.
 typedef Slice(idx_t) vec_t;
@@ -192,7 +205,8 @@ size_t netsize(len_t nlens, len_t *llens);
 // Initialize a network with given layer sizes using provided buffer.
 // nlens is the number of elements in llens, llens[i] is the size of layer i.
 void netinit(net_t *n, len_t nlens, len_t *llens, len_t nbuf, char *buffer);
-// Allocate and initialize a network with given layer sizes. Free with GRADINO_FREE.
+// Allocate and initialize a network with given layer sizes. Free with
+// GRADINO_FREE.
 net_t *netcreate(len_t nlens, len_t *llens);
 // Forward pass through the network.
 // Requires: input->len == llens[0], result->len == llens[nlens-1].
