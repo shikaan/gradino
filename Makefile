@@ -57,6 +57,7 @@ examples/00_backprop: gradino.o
 examples/01_network: gradino.o
 examples/02_training: gradino.o
 examples/03_inference: gradino.o
+examples/04_tictactoe: gradino.o
 
 examples: examples/00_backprop examples/01_network \
 	examples/02_training examples/03_inference

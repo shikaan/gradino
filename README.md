@@ -32,11 +32,17 @@ The zero-allocation mode makes it:
 
 - Copy-paste `gradino.c` and `gradino.h` in your project and you're done.
 - See [`gradino.h`](./gradino.h) for the full API documentation and examples.
-- [Train a tiny network to recognize 7-part digits](./examples/03_inference.c)
 
+### Examples
+
+[Recognize 7-part digits](./examples/03_inference.c)
 ```sh
-# Build example number 03
-make example NR=03
+make example NR=04
+```
+
+[Play Tic-Tac-Toe against CPU](./examples/04_tictactoe.c)
+```sh
+make example NR=04
 ```
 
 ## How it works
